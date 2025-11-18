@@ -1,18 +1,200 @@
-<div class="page-heading">
-	<h3>API Documentation</h3>
+<style>
+	.api-hero {
+		background: linear-gradient(120deg, #0f172a, #1b3358, #2563eb);
+		color: #fff;
+		border-radius: 24px;
+		padding: 2.5rem;
+		box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+	}
+	.api-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.35rem 0.9rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.15);
+		font-weight: 600;
+		font-size: 0.85rem;
+	}
+	.api-card {
+		border-radius: 18px;
+		box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+	}
+	code, pre {
+		font-family: "JetBrains Mono", "Fira Code", monospace;
+	}
+	pre {
+		background: #0d1117;
+		color: #e2e8f0;
+		border-radius: 16px;
+		padding: 1.25rem;
+		overflow-x: auto;
+	}
+	.endpoint-label {
+		font-size: 0.85rem;
+		font-weight: 700;
+		padding: 0.2rem 0.8rem;
+		border-radius: 999px;
+	}
+	.endpoint-label.get {
+		background: rgba(16, 185, 129, 0.15);
+		color: #059669;
+	}
+	.endpoint-label.post {
+		background: rgba(59, 130, 246, 0.15);
+		color: #2563eb;
+	}
+	.endpoint-label.delete {
+		background: rgba(248, 113, 113, 0.15);
+		color: #dc2626;
+	}
+</style>
+
+<div class="page-heading d-flex flex-wrap justify-content-between align-items-center gap-2">
+	<div>
+		<h3 class="mb-1">API Documentation</h3>
+		<p class="text-muted mb-0">Gunakan endpoint berikut untuk mengintegrasikan WhatsApp Gateway dengan sistem Anda.</p>
+	</div>
+	<a href="https://documenter.getpostman.com/view/16528402/VVXC3EjU" target="_blank" class="btn btn-primary">
+		<i class="fa-solid fa-up-right-from-square me-2"></i>Buka Koleksi Postman
+	</a>
 </div>
+
 <div class="page-content">
-	<div class="card">
-		<div class="card-body px-4 py-4-5">
-			<img class="card-img-top img-fluid" src="/image/Banner2.png" alt="foto bg" />
+	<div class="api-hero mb-4">
+		<div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+			<div>
+				<p class="api-pill text-uppercase"><i class="fa-solid fa-network-wired"></i> REST API</p>
+				<h2 class="fw-bold mt-3 mb-3">WhatsApp Gateway REST API</h2>
+				<p class="mb-4">
+					Endpoint ini tersedia di instance yang sama dengan dashboard. Gunakan HTTPS bila gateway berada di publik. Semua request harus menyertakan token yang sesuai.
+				</p>
+				<div class="d-flex flex-wrap gap-2">
+					<div class="api-pill bg-white text-dark">
+						Base URL: <code><%= process.env.HOST || 'http://localhost:8080' %></code>
+					</div>
+					<div class="api-pill">
+						Default session: <code><%= process.env.N8N_SESSION_NAME || process.env.SESSION_NAME %></code>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
-	<div class="card">
-		<div class="card-header">
-			<h4 class="card-title">API Documentation</h4>
+
+	<section class="row g-4">
+		<div class="col-lg-6 col-12">
+			<div class="card api-card">
+				<div class="card-header border-0">
+					<div class="d-flex justify-content-between align-items-center">
+						<h4 class="mb-0">Send Text Message</h4>
+						<span class="endpoint-label post">POST</span>
+					</div>
+					<p class="text-muted mb-0 mt-2">Endpoint cepat yang kompatibel dengan Fonnte.</p>
+				</div>
+				<div class="card-body">
+					<p class="mb-1 text-muted">URL:</p>
+					<pre><code>POST /api/send</code></pre>
+					<p class="mb-1 text-muted">Headers:</p>
+					<pre><code>Authorization: &lt;API_SEND_TOKEN&gt;
+Content-Type: application/json</code></pre>
+					<p class="mb-1 text-muted">Body:</p>
+					<pre><code>{
+  "target": "6281234567890",
+  "message": "Halo dari gateway!",
+  "sessions": "session_1",   // opsional
+  "type": "text"
+}</code></pre>
+					<p class="mb-1 text-muted">Response (200):</p>
+					<pre><code>{
+  "status": 200,
+  "message": "Success Send Message to 6281234567890!"
+}</code></pre>
+				</div>
+			</div>
 		</div>
-		<div class="card-body">
-			<p>You Can See All Documentation Here <a target="_blank" href="https://documenter.getpostman.com/view/16528402/VVXC3EjU">POSTMAN</a></p>
+
+		<div class="col-lg-6 col-12">
+			<div class="card api-card">
+				<div class="card-header border-0">
+					<div class="d-flex justify-content-between align-items-center">
+						<h4 class="mb-0">n8n → Gateway</h4>
+						<span class="endpoint-label post">POST</span>
+					</div>
+					<p class="text-muted mb-0 mt-2">Endpoint khusus n8n yang dipakai workflow bawaan.</p>
+				</div>
+				<div class="card-body">
+					<p class="mb-1 text-muted">URL:</p>
+					<pre><code>POST /n8n/send</code></pre>
+					<p class="mb-1 text-muted">Headers:</p>
+					<pre><code>Authorization: &lt;N8N_API_TOKEN&gt;
+Content-Type: application/json</code></pre>
+					<p class="mb-1 text-muted">Body:</p>
+					<pre><code>{
+  "target": "6281234567890",
+  "message": "Ini dari workflow n8n"
+}</code></pre>
+					<p class="small text-muted">Jika field <code>sessions</code> tidak dikirim, gateway memakai <code>N8N_SESSION_NAME</code> (atau <code>SESSION_NAME</code>).</p>
+				</div>
+			</div>
 		</div>
-	</div>
+
+		<div class="col-lg-6 col-12">
+			<div class="card api-card">
+				<div class="card-header border-0">
+					<div class="d-flex justify-content-between align-items-center">
+						<h4 class="mb-0">Inbound Webhook</h4>
+						<span class="endpoint-label post">POST</span>
+					</div>
+					<p class="text-muted mb-0 mt-2">Gateway mengirim data ini ke callback yang Anda set.</p>
+				</div>
+				<div class="card-body">
+					<p class="text-muted mb-1">Payload contoh:</p>
+					<pre><code>{
+  "session": "session_1",
+  "sender": "6281234567890",
+  "from": "6281234567890@s.whatsapp.net",
+  "type": "text",
+  "message": "Halo",
+  "url": null,
+  "timestamp": 1731904800
+}</code></pre>
+					<p class="small text-muted mb-0">
+						Set callback melalui dashboard atau REST <code>/api/callback</code>. Token opsional dikirim sebagai header <code>x-api-key</code>.
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-lg-6 col-12">
+			<div class="card api-card">
+				<div class="card-header border-0">
+					<div class="d-flex justify-content-between align-items-center">
+						<h4 class="mb-0">Callback REST</h4>
+						<span class="endpoint-label get">GET</span>
+						<span class="endpoint-label post">POST</span>
+						<span class="endpoint-label delete">DELETE</span>
+					</div>
+					<p class="text-muted mb-0 mt-2">Kelola URL callback per sesi.</p>
+				</div>
+				<div class="card-body">
+					<ul class="list-unstyled mb-0">
+						<li class="mb-3">
+							<strong>GET /api/callback</strong> – daftar seluruh callback, gunakan <code>?session_name=nama</code> untuk satu sesi.
+						</li>
+						<li class="mb-3">
+							<strong>POST /api/callback</strong> – simpan callback:
+							<pre><code>{
+  "session_name": "session_1",
+  "callback_url": "https://n8n.domain/webhook/inbox",
+  "callback_token": "opsional"
+}</code></pre>
+						</li>
+						<li>
+							<strong>DELETE /api/callback/:session_name</strong> – hapus callback untuk sesi tersebut.
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</section>
 </div>

@@ -36,7 +36,7 @@ export default class Message extends Serialize {
             }
             
         } catch (error) {
-            console.log("Error in mainHandler:", error);
+            // Silent - errors are handled gracefully
         }
     }
 
@@ -67,7 +67,7 @@ export default class Message extends Serialize {
             await this.markAsRead(m.msg);
             
         } catch (error) {
-            console.log("Error in messageHandler:", error);
+            // Silent - errors are handled gracefully
         }
     }
 
@@ -75,15 +75,12 @@ export default class Message extends Serialize {
         try {
             // Validasi struktur message
             if (!message || !message.key || !message.key.remoteJid || !message.key.id) {
-                console.log("Invalid message structure for markAsRead");
                 return;
             }
             
             const remoteJid = message.key.remoteJid;
             const participant = message.key.participant || undefined;
             const msgId = message.key.id;
-            
-            console.log(`Marking message as read: ${msgId} from ${remoteJid}`);
             
             // Method 1: readMessages (standard Baileys)
             if (typeof this.client.readMessages === "function") {
@@ -92,28 +89,23 @@ export default class Message extends Serialize {
                     id: msgId,
                     participant: participant
                 }]);
-                console.log("Success using readMessages");
                 return;
             }
             
             // Method 2: sendReceipt (alternative Baileys)
             if (typeof this.client.sendReceipt === "function") {
                 await this.client.sendReceipt(remoteJid, participant, [msgId], "read");
-                console.log("Success using sendReceipt");
                 return;
             }
             
             // Method 3: chatRead (modern Baileys)
             if (typeof this.client.chatRead === "function") {
                 await this.client.chatRead(remoteJid, message.key);
-                console.log("Success using chatRead");
                 return;
             }
             
-            console.log("No available method for mark as read");
-            
         } catch (error) {
-            console.log("Failed to mark message as read:", error.message);
+            // Silent - mark as read failures are not critical
         }
     }
 }

@@ -7,7 +7,12 @@ class SessionDatabase {
 
 	async createSessionDB(session_name, session_number) {
 		console.log(session_name, session_number);
-		await this.session.create({ session_name, session_number, status: "CONNECTED" });
+		const existing = await this.session.findOne({ where: { session_name } });
+		if (existing) {
+			await existing.update({ session_number, status: "CONNECTED" });
+		} else {
+			await this.session.create({ session_name, session_number, status: "CONNECTED" });
+		}
 	}
 
 	async deleteSessionDB(session_name) {

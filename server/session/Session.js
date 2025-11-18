@@ -55,142 +55,202 @@ class ConnectionSession extends SessionDatabase {
     socket.emit(`update-qr`, { buffer: dataBase64, session_name });
     this.count++;
     console.log(
-      modules.color("[SYS]", "#EB6112"),
-      modules.color(`[Session: ${session_name}] Open the browser, a qr has appeared on the website, scan it now!`, "#E6B0AA")
+      modules.color("[QR]", "#EB6112"),
+      modules.color(`[${session_name}] QR Code ready - Scan now!`, "#E6B0AA")
     );
-    console.log(this.count);
+  }
+
+  async safeLogout(client) {
+    if (!client || typeof client.logout !== "function") return;
+    try {
+      await client.logout();
+    } catch (error) {
+      // Prevent Baileys from throwing and killing the app when WS already closed
+      // Silent ignore - no need to log this
+    }
   }
 
   async createSession(session_name) {
     const sessionDir = `${this.sessionPath}/${session_name}`;
     const storePath = `${this.sessionPath}/store/${session_name}.json`;
-    let { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-
-    const options = {
-      printQRInTerminal: false,
-      auth: state,
-      logger: pino({ level: "silent" }),
-      browser: Browsers.macOS("Safari"),
-      version,
-    };
-
-    const store = makeInMemoryStore({});
-    store.readFromFile(storePath);
-
-    const client = WASocket.default(options);
-
-    store.readFromFile(storePath);
-    setInterval(() => {
-      store.writeToFile(storePath);
-    }, 10_000);
-    store.bind(client.ev);
-    sessions = { ...client, isStop: false };
-
-    client.ev.on("creds.update", saveCreds);
-    client.ev.on("connection.update", async (update) => {
-      if (this.count >= 3) {
-        this.deleteSession(session_name, { removeFromDB: false });
-        socket.emit("connection-status", { session_name, result: "No Response, QR Scan Canceled" });
-        console.log(`Count : ${this.count}, QR Stopped!`);
-        client.ev.removeAllListeners("connection.update");
-        return;
-      }
-
-      if (update.qr) this.generateQr(update.qr, session_name);
-
-      if (update.isNewLogin) {
-        await this.createSessionDB(session_name, client.authState.creds.me.id.split(":")[0]);
-        let files = `${this.logPath}/${session_name}.txt`;
-        // Make sure log directory exists (in case environment changed after constructor)
-        if (!fs.existsSync(this.logPath)) {
-          fs.mkdirSync(this.logPath, { recursive: true });
-        }
-        if (!fs.existsSync(files)) {
-          fs.writeFileSync(files, `Success Create new Session : ${session_name}, ${client.authState.creds.me.id.split(":")[0]}\n`);
-        }
-        const readLog = fs.readFileSync(files, "utf8");
-        return socket.emit("logger", {
-          session_name,
-          result: readLog,
-          files,
-          session_number: client.authState.creds.me.id.split(":")[0],
-          status: "CONNECTED",
-        });
-      }
-
-      const { lastDisconnect, connection } = update;
-      if (connection === "close") {
-        const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        if (reason === DisconnectReason.badSession) {
-          console.log(
-            modules.color("[SYS]", "#EB6112"),
-            modules.color(`Bad Session File, Please Delete [Session: ${session_name}] and Scan Again`, "#E6B0AA")
-          );
-          this.deleteSession(session_name, { removeFromDB: false });
-          client.logout();
-          return socket.emit("connection-status", { session_name, result: "Bad Session File, Please Create QR Again" });
-        } else if (reason === DisconnectReason.connectionClosed) {
-          const checked = this.getClient();
-          if (checked.isStop == false) {
-            console.log(
-              modules.color("[SYS]", "#EB6112"),
-              modules.color(`[Session: ${session_name}] Connection closed, reconnecting....`, "#E6B0AA")
-            );
-            this.createSession(session_name);
-          } else if (checked.isStop == true) {
-            await this.updateStatusSessionDB(session_name, "STOPPED");
-            console.log(modules.color("[SYS]", "#EB6112"), modules.color(`[Session: ${session_name}] Connection close Success`, "#E6B0AA"));
-            socket.emit("session-status", { session_name, status: "STOPPED" });
-          }
-        } else if (reason === DisconnectReason.connectionLost) {
-          console.log(
-            modules.color("[SYS]", "#EB6112"),
-            modules.color(`[Session: ${session_name}] Connection Lost from Server, reconnecting...`, "#E6B0AA")
-          );
-          this.createSession(session_name);
-        } else if (reason === DisconnectReason.connectionReplaced) {
-          console.log(
-            modules.color("[SYS]", "#EB6112"),
-            modules.color(`[Session: ${session_name}] Connection Replaced, Another New Session Opened, Please Close Current Session First`, "#E6B0AA")
-          );
-          client.logout();
-          return socket.emit("connection-status", {
-            session_name,
-            result: `[Session: ${session_name}] Connection Replaced, Another New Session Opened, Please Create QR Again`,
-          });
-        } else if (reason === DisconnectReason.loggedOut) {
-          console.log(
-            modules.color("[SYS]", "#EB6112"),
-            modules.color(`Device Logged Out, Please Delete [Session: ${session_name}] and Scan Again.`, "#E6B0AA")
-          );
-          client.logout();
-          return socket.emit("connection-status", { session_name, result: `[Session: ${session_name}] Device Logged Out, Please Create QR Again` });
-        } else if (reason === DisconnectReason.restartRequired) {
-          console.log(modules.color("[SYS]", "#EB6112"), modules.color(`[Session: ${session_name}] Restart Required, Restarting...`, "#E6B0AA"));
-          this.createSession(session_name);
-        } else if (reason === DisconnectReason.timedOut) {
-          console.log(modules.color("[SYS]", "#EB6112"), modules.color(`[Session: ${session_name}] Connection TimedOut, Reconnecting...`, "#E6B0AA"));
-          this.createSession(session_name);
-        } else {
-          client.end(`Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`);
-        }
-      } else if (connection == "open") {
-        await this.updateStatusSessionDB(session_name, "CONNECTED");
-        socket.emit("session-status", { session_name, status: "CONNECTED" });
-        console.log(
-          modules.color("[SYS]", "#EB6112"),
-          modules.color(moment().format("DD/MM/YY HH:mm:ss"), "#F8C471"),
-          modules.color(`[Session: ${session_name}] Session is Now Connected - Baileys Version ${version}, isLatest : ${isLatest}`, "#82E0AA")
+    
+    // Pastikan folder session dibuat sebelum useMultiFileAuthState
+    if (!fs.existsSync(sessionDir)) {
+      try {
+        fs.mkdirSync(sessionDir, { recursive: true });
+      } catch (err) {
+        console.error(
+          modules.color("[ERROR]", "#EB6112"),
+          modules.color(`Failed to create session directory: ${err.message}`, "#E6B0AA")
         );
+        throw err;
       }
-    });
+    }
+    
+    // Pastikan store directory juga ada
+    const storeDir = `${this.sessionPath}/store`;
+    if (!fs.existsSync(storeDir)) {
+      try {
+        fs.mkdirSync(storeDir, { recursive: true });
+      } catch (err) {
+        // Silent - will retry if needed
+      }
+    }
+    
+    try {
+      let { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+      const { version, isLatest } = await fetchLatestBaileysVersion();
 
-    client.ev.on("messages.upsert", async ({ messages, type }) => {
-      if (type !== "notify") return;
-      const message = new Message(client, { messages, type }, session_name);
-      message.mainHandler();
-    });
+      const options = {
+        printQRInTerminal: false,
+        auth: state,
+        logger: pino({ level: "silent" }),
+        browser: Browsers.macOS("Safari"),
+        version,
+      };
+
+      const store = makeInMemoryStore({});
+      store.readFromFile(storePath);
+
+      const client = WASocket.default(options);
+
+      store.readFromFile(storePath);
+      setInterval(() => {
+        store.writeToFile(storePath);
+      }, 10_000);
+      store.bind(client.ev);
+      sessions = { ...client, isStop: false };
+
+      client.ev.on("creds.update", saveCreds);
+      client.ev.on("connection.update", async (update) => {
+        if (this.count >= 3) {
+          this.deleteSession(session_name, { removeFromDB: false });
+          socket.emit("connection-status", { session_name, result: "No Response, QR Scan Canceled" });
+          console.log(
+            modules.color("[QR]", "#EB6112"),
+            modules.color(`[${session_name}] QR expired - No response after 3 attempts`, "#E6B0AA")
+          );
+          client.ev.removeAllListeners("connection.update");
+          return;
+        }
+
+        if (update.qr) this.generateQr(update.qr, session_name);
+
+        if (update.isNewLogin) {
+          this.count = 0;
+          await this.createSessionDB(session_name, client.authState.creds.me.id.split(":")[0]);
+          let files = `${this.logPath}/${session_name}.txt`;
+          // Make sure log directory exists (in case environment changed after constructor)
+          if (!fs.existsSync(this.logPath)) {
+            fs.mkdirSync(this.logPath, { recursive: true });
+          }
+          if (!fs.existsSync(files)) {
+            fs.writeFileSync(files, `Success Create new Session : ${session_name}, ${client.authState.creds.me.id.split(":")[0]}\n`);
+          }
+          const readLog = fs.readFileSync(files, "utf8");
+          return socket.emit("logger", {
+            session_name,
+            result: readLog,
+            files,
+            session_number: client.authState.creds.me.id.split(":")[0],
+            status: "CONNECTED",
+          });
+        }
+
+        const { lastDisconnect, connection } = update;
+        if (connection === "close") {
+          const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+          if (reason === DisconnectReason.badSession) {
+            console.log(
+              modules.color("[ERROR]", "#EB6112"),
+              modules.color(`[${session_name}] Bad session file - Please scan QR again`, "#E6B0AA")
+            );
+            this.deleteSession(session_name, { removeFromDB: false });
+            this.safeLogout(client);
+            return socket.emit("connection-status", { session_name, result: "Bad Session File, Please Create QR Again" });
+          } else if (reason === DisconnectReason.connectionClosed) {
+            const checked = this.getClient();
+            if (checked.isStop == false) {
+              // Auto-reconnect - no need to log
+              this.createSession(session_name);
+            } else if (checked.isStop == true) {
+              await this.updateStatusSessionDB(session_name, "STOPPED");
+              console.log(
+                modules.color("[STOP]", "#EB6112"),
+                modules.color(`[${session_name}] Session stopped`, "#E6B0AA")
+              );
+              socket.emit("session-status", { session_name, status: "STOPPED" });
+            }
+          } else if (reason === DisconnectReason.connectionLost) {
+            // Auto-reconnect - no need to log
+            this.createSession(session_name);
+          } else if (reason === DisconnectReason.connectionReplaced) {
+            console.log(
+              modules.color("[WARN]", "#EB6112"),
+              modules.color(`[${session_name}] Connection replaced - Another session opened`, "#E6B0AA")
+            );
+            this.safeLogout(client);
+            this.deleteSession(session_name, { removeFromDB: false });
+            return socket.emit("connection-status", {
+              session_name,
+              result: `[Session: ${session_name}] Connection Replaced, Another New Session Opened, Please Create QR Again`,
+            });
+          } else if (reason === DisconnectReason.loggedOut) {
+            console.log(
+              modules.color("[WARN]", "#EB6112"),
+              modules.color(`[${session_name}] Device logged out - Please scan QR again`, "#E6B0AA")
+            );
+            this.safeLogout(client);
+            this.deleteSession(session_name, { removeFromDB: false });
+            return socket.emit("connection-status", { session_name, result: `[Session: ${session_name}] Device Logged Out, Please Create QR Again` });
+          } else if (reason === DisconnectReason.restartRequired) {
+            // Auto-reconnect - no need to log
+            this.createSession(session_name);
+          } else if (reason === DisconnectReason.timedOut) {
+            // Auto-reconnect - no need to log
+            this.createSession(session_name);
+          } else {
+            console.log(
+              modules.color("[WARN]", "#EB6112"),
+              modules.color(`[${session_name}] Unknown disconnect reason: ${reason}`, "#E6B0AA")
+            );
+            client.end(`Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`);
+          }
+        } else if (connection == "open") {
+          this.count = 0;
+          await this.updateStatusSessionDB(session_name, "CONNECTED");
+          socket.emit("session-status", { session_name, status: "CONNECTED" });
+          console.log(
+            modules.color("[✓]", "#82E0AA"),
+            modules.color(`[${session_name}] Connected successfully`, "#82E0AA")
+          );
+        }
+      });
+
+      client.ev.on("messages.upsert", async ({ messages, type }) => {
+        if (type !== "notify") return;
+        const message = new Message(client, { messages, type }, session_name);
+        message.mainHandler();
+      });
+    } catch (error) {
+      console.error(
+        modules.color("[ERROR]", "#EB6112"),
+        modules.color(`[${session_name}] Failed to create session: ${error.message}`, "#E6B0AA")
+      );
+      // Hapus session directory jika ada error
+      if (fs.existsSync(sessionDir)) {
+        try {
+          fs.rmSync(sessionDir, { force: true, recursive: true });
+        } catch (err) {
+          // Silent cleanup error
+        }
+      }
+      socket.emit("connection-status", {
+        session_name,
+        result: `Error creating session: ${error.message}. Please try again.`,
+      });
+      await this.updateStatusSessionDB(session_name, "STOPPED");
+    }
   }
 }
 

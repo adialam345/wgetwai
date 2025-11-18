@@ -4,7 +4,7 @@
 
 <img src="./public/image/readme/dashboard.png" width="500" alt="Img Dashboard" >
 
-Simple WhatsApp Gateway, Built Using Baileys, Express, Sequelize + [Mazer](https://github.com/zuramai/mazer)
+Simple WhatsApp Gateway, Built Using Baileys, Express, Sequelize + [mazer](https://github.com/zuramai/mazer)
 
 </div>
 

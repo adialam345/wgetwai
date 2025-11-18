@@ -1,6 +1,6 @@
 <style>
 	.dashboard-hero {
-		background: linear-gradient(120deg, #202d72, #1b9aaa, #6dd5ed);
+		background: linear-gradient(120deg, #505a82, #1b9aaa, #6dd5ed);
 		color: #fff;
 		border: none;
 		border-radius: 26px;
@@ -44,6 +44,101 @@
 	}
 	.quick-links a {
 		width: 100%;
+	}
+	.log-terminal {
+		background: #0d1117;
+		border-radius: 12px;
+		padding: 1.25rem;
+		font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+		font-size: 0.875rem;
+		color: #c9d1d9;
+		max-height: 400px;
+		overflow-y: auto;
+		overflow-x: auto;
+		line-height: 1.6;
+	}
+	.log-terminal::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	.log-terminal::-webkit-scrollbar-track {
+		background: #161b22;
+		border-radius: 4px;
+	}
+	.log-terminal::-webkit-scrollbar-thumb {
+		background: #30363d;
+		border-radius: 4px;
+	}
+	.log-terminal::-webkit-scrollbar-thumb:hover {
+		background: #484f58;
+	}
+	.log-line {
+		margin: 0.25rem 0;
+		padding: 0.25rem 0;
+		border-left: 3px solid transparent;
+		padding-left: 0.75rem;
+	}
+	.log-line:hover {
+		background: rgba(255, 255, 255, 0.05);
+		border-left-color: #58a6ff;
+	}
+	.session-card {
+		background: transparent;
+		border-radius: 16px;
+		padding: 1.5rem;
+	}
+	.session-info-item {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		background: rgba(0, 0, 0, 0.02);
+		border-radius: 10px;
+		margin-bottom: 0.75rem;
+		border: 1px solid rgba(0, 0, 0, 0.05);
+		transition: all 0.2s ease;
+	}
+	.session-info-item:hover {
+		background: rgba(0, 0, 0, 0.04);
+		border-color: rgba(0, 0, 0, 0.1);
+	}
+	.session-info-item i {
+		font-size: 1.25rem;
+		width: 24px;
+		text-align: center;
+		color: #bcc8d3;
+	}
+	.session-info-item .small {
+		color: #e5edf3;
+		font-size: 0.75rem;
+		font-weight: 500;
+	}
+	.session-info-item .fw-bold {
+		color: #a6a7a9;
+		font-weight: 600;
+		font-size: 0.95rem;
+	}
+	.session-card {
+		color: #212529;
+	}
+	.status-badge-modern {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border-radius: 8px;
+		font-weight: 600;
+		font-size: 0.875rem;
+	}
+	.status-badge-modern.connected {
+		background: rgba(34, 197, 94, 0.2);
+		color: #22c55e;
+		border: 1px solid rgba(34, 197, 94, 0.3);
+	}
+	.status-badge-modern.stopped {
+		background: rgba(234, 179, 8, 0.2);
+		color: #eab308;
+		border: 1px solid rgba(234, 179, 8, 0.3);
 	}
 </style>
 <div class="page-heading d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -112,19 +207,23 @@
 							function appendData(data) {
 								var mainContainer = document.getElementById("logger");
 								var div = document.createElement("div");
-								let c = data.split("\n");
-								let d = c.map((el, index) => {
-									el = `${el}<br />`;
-									return el;
+								let c = data.split("\n").filter(line => line.trim() !== "");
+								let logLines = c.map((el, index) => {
+									return `<div class="log-line">${el}</div>`;
 								});
 
-								div.innerHTML = `<div style="color: white; font-family: courier; background: #0d1117; display: flex; overflow-x: scroll; max-height: 375px; padding: 1rem" class="scroll">
-				<p style="margin-left: 15px; font-size: 14px;"> ${d.reverse().join("")}</p></div>`;
+								div.innerHTML = `<div class="log-terminal">${logLines.reverse().join("")}</div>`;
+								mainContainer.innerHTML = "";
 								mainContainer.appendChild(div);
+								// Auto scroll to bottom
+								const terminal = div.querySelector('.log-terminal');
+								if (terminal) {
+									terminal.scrollTop = terminal.scrollHeight;
+								}
 							}
 						</script>
 						<% } else { %>
-						<div class="text-center text-muted py-5">
+						<div class="text-center text-muted py-5" id="qr-placeholder">
 							<i class="fa-solid fa-qrcode fa-2x mb-3"></i>
 							<p class="mb-0">Belum ada sesi. Buat sesi baru untuk memulai.</p>
 						</div>
@@ -139,34 +238,57 @@
 				<div class="card-header border-0">
 					<h4 class="mb-0">Ringkasan Sesi</h4>
 				</div>
-				<div class="card-body">
+				<div class="card-body p-0">
 					<% if (session) { %>
-					<div class="text-center" id="sessionCreate">
-						<p id="nameSession" class="h5"><strong><%= session.session_name %></strong></p>
-						<p id="numberSession" class="text-muted mb-1"><%= session.session_number %></p>
-						<p id="statusSession" class="badge <%= session.status === 'CONNECTED' ? 'bg-success' : 'bg-warning text-dark' %>">
-							<%= session.status %>
-						</p>
+					<div class="session-card" id="sessionCreate">
+						<div class="session-info-item">
+							<i class="fa-solid fa-tag"></i>
+							<div>
+								<div class="small">Nama Sesi</div>
+								<div class="fw-bold" id="nameSession"><%= session.session_name %></div>
+							</div>
+						</div>
+						<div class="session-info-item">
+							<i class="fa-solid fa-phone"></i>
+							<div>
+								<div class="small">Nomor WhatsApp</div>
+								<div class="fw-bold" id="numberSession"><%= session.session_number || 'Belum terhubung' %></div>
+							</div>
+						</div>
+						<div class="session-info-item">
+							<i class="fa-solid fa-circle-dot"></i>
+							<div>
+								<div class="small">Status</div>
+								<div id="statusSession">
+									<span class="status-badge-modern <%= session.status === 'CONNECTED' ? 'connected' : 'stopped' %>">
+										<i class="fa-solid fa-<%= session.status === 'CONNECTED' ? 'check-circle' : 'clock' %>"></i>
+										<%= session.status %>
+									</span>
+								</div>
+							</div>
+						</div>
 						<div id="buttonSession" class="mt-3">
 							<% if (session.status == 'CONNECTED') { %>
-							<button class="btn btn-warning w-100 mb-2" onclick="alertStopSession('<%= session.session_name %>')">
+							<button class="btn btn-warning w-100 mb-2 fw-semibold" onclick="alertStopSession('<%= session.session_name %>')">
 								<i class="fa-solid fa-circle-stop me-2"></i>Stop Session
 							</button>
 							<% } else { %>
-							<button class="btn btn-primary w-100 mb-2" onclick="alertStartSession('<%= session.session_name %>')">
+							<button class="btn btn-primary w-100 mb-2 fw-semibold" onclick="alertStartSession('<%= session.session_name %>')">
 								<i class="fa-solid fa-play me-2"></i>Start Session
 							</button>
 							<% } %>
 						</div>
 						<div id="deleteSession">
-							<a href="/session/delete-session/<%= session.session_name %>" class="btn btn-outline-danger w-100">
+							<a href="/session/delete-session/<%= session.session_name %>" class="btn btn-outline-danger w-100 fw-semibold" onclick="return confirm('Yakin hapus sesi ini?')">
 								<i class="fa-solid fa-trash-can me-2"></i>Delete Session
 							</a>
 						</div>
 					</div>
 					<% } else { %>
-					<div class="text-center text-muted" id="sessionCreate">
-						<p>No Session Active</p>
+					<div class="text-center text-muted py-5" id="sessionCreate">
+						<i class="fa-solid fa-inbox fa-2x mb-3 opacity-50"></i>
+						<p class="mb-0">Tidak ada sesi aktif</p>
+						<p class="small mt-2">Buat sesi baru untuk memulai</p>
 					</div>
 					<% } %>
 				</div>
@@ -274,31 +396,99 @@
 	socket.on(`update-qr`, (event) => {
 		// $("#cancelqr").html(`<a href="/session/cancelqr?id=${event.session_name}" style="text-align: center" class="btn btn-danger"><i class="fas fa-ban"></i>&nbsp Cancel QR</a>`);
 		$("#socket-qr").html(`<center><img class="img-fluid" src="data:image/png;base64,${event.buffer}" alt="" /></center>`);
+		$("#qr-placeholder").remove();
+	});
+
+	socket.on("qr-loading", (event) => {
+		const text =
+			event.message ||
+			(event.status === "WAITING_MANUAL"
+				? `Menunggu tindakan. Tekan tombol <strong>Generate QR</strong> untuk sesi <strong>${event.session_name}</strong>.`
+				: `Menyiapkan QR untuk <strong>${event.session_name}</strong>...`);
+		$("#socket-qr").html(
+			`<div class="text-center text-muted py-5">
+				<div class="spinner-border text-primary mb-3" role="status"></div>
+				<p class="mb-0">${text}</p>
+			</div>`
+		);
 	});
 
 	socket.on("logger", (event) => {
-		let c = event.result.split("\n");
-		let d = c.map((el, index) => {
-			el = `${el}<br />`;
-			return el;
+		let c = event.result.split("\n").filter(line => line.trim() !== "");
+		let logLines = c.map((el, index) => {
+			return `<div class="log-line">${el}</div>`;
 		});
-		let hasil = d.reverse().join("");
+		let hasil = logLines.reverse().join("");
 		$("#cancelqr").html(`Create Session &nbsp;&nbsp;<i class="fa-solid fa-arrow-right"></i>`);
-		$("#socket-qr").html(`<div style="color: white; font-family: courier; background: black; display: flex; overflow-x: scroll; max-height: 375px" class="scroll"><p style="margin-left: 15px; font-size: 14px;"> ${hasil}</p></div>`);
+		$("#socket-qr").html(`<div class="log-terminal">${hasil}</div>`);
+		// Auto scroll to bottom
+		setTimeout(() => {
+			const terminal = document.querySelector('.log-terminal');
+			if (terminal) {
+				terminal.scrollTop = terminal.scrollHeight;
+			}
+		}, 100);
+		
+		const statusClass = event.status === 'CONNECTED' ? 'connected' : 'stopped';
+		const statusIcon = event.status === 'CONNECTED' ? 'check-circle' : 'clock';
+		const buttonHtml = event.status === 'CONNECTED' 
+			? `<button class="btn btn-warning w-100 mb-2 fw-semibold" onclick="alertStopSession('${event.session_name}')"><i class="fa-solid fa-circle-stop me-2"></i>Stop Session</button>`
+			: `<button class="btn btn-primary w-100 mb-2 fw-semibold" onclick="alertStartSession('${event.session_name}')"><i class="fa-solid fa-play me-2"></i>Start Session</button>`;
+		
 		$("#sessionCreate").html(
-			`<p id="nameSession"><strong>${event.session_name}</strong></p><p id="numberSession"><small>${event.session_number}</small></p><p id="statusSession"><small>${event.status}</small></p><div id="buttonSession"><button class="btn btn-warning" style="margin-top: 5px" onclick="alertStopSession('${event.session_name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Stop Session"><i class="fa-solid fa-stop"></i>&nbsp;&nbsp; Stop Session</button></div><div id="deleteSession"><a href="/session/delete-session/${event.session_name}" style="margin-top: 5px" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Session"><i class="fa-solid fa-trash-can"></i>&nbsp;&nbsp; Delete Session</a></div>`
+			`<div class="session-info-item">
+				<i class="fa-solid fa-tag"></i>
+				<div>
+					<div class="small opacity-75">Nama Sesi</div>
+					<div class="fw-bold" id="nameSession">${event.session_name}</div>
+				</div>
+			</div>
+			<div class="session-info-item">
+				<i class="fa-solid fa-phone"></i>
+				<div>
+					<div class="small opacity-75">Nomor WhatsApp</div>
+					<div class="fw-bold" id="numberSession">${event.session_number || 'Belum terhubung'}</div>
+				</div>
+			</div>
+			<div class="session-info-item">
+				<i class="fa-solid fa-circle-dot"></i>
+				<div>
+					<div class="small opacity-75">Status</div>
+					<div id="statusSession">
+						<span class="status-badge-modern ${statusClass}">
+							<i class="fa-solid fa-${statusIcon}"></i>
+							${event.status}
+						</span>
+					</div>
+				</div>
+			</div>
+			<div id="buttonSession" class="mt-3">
+				${buttonHtml}
+			</div>
+			<div id="deleteSession">
+				<a href="/session/delete-session/${event.session_name}" class="btn btn-outline-danger w-100 fw-semibold" onclick="return confirm('Yakin hapus sesi ini?')">
+					<i class="fa-solid fa-trash-can me-2"></i>Delete Session
+				</a>
+			</div>`
 		);
 	});
 
 	socket.on(`session-status`, (event) => {
-		$("#statusSession").html(`<small>${event.status}</small>`);
+		const statusClass = event.status === 'CONNECTED' ? 'connected' : 'stopped';
+		const statusIcon = event.status === 'CONNECTED' ? 'check-circle' : 'clock';
+		$("#statusSession").html(
+			`<span class="status-badge-modern ${statusClass}">
+				<i class="fa-solid fa-${statusIcon}"></i>
+				${event.status}
+			</span>`
+		);
 		if (event.status == "CONNECTED") {
 			$("#buttonSession").html(
-				`<button class="btn btn-warning" style="margin-top: 5px" onclick="alertStopSession('${event.session_name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Stop Session"><i class="fa-solid fa-stop"></i>&nbsp;&nbsp; Stop Session</button>`
+				`<button class="btn btn-warning w-100 mb-2 fw-semibold" onclick="alertStopSession('${event.session_name}')"><i class="fa-solid fa-circle-stop me-2"></i>Stop Session</button>`
 			);
 		} else if (event.status == "STOPPED") {
 			$("#buttonSession").html(
-				`<button class="btn btn-primary" style="margin-top: 5px" onclick="alertStartSession('${event.session_name}')" data-bs-toggle="tooltip" data-bs-placement="top" title="Start Session"><i class="fa-solid fa-play"></i>&nbsp;&nbsp; Start Session</button>`
+				`<button class="btn btn-primary w-100 mb-2 fw-semibold" onclick="alertStartSession('${event.session_name}')"><i class="fa-solid fa-play me-2"></i>Start Session</button>`
 			);
 		}
 	});
@@ -419,4 +609,5 @@
 			}
 		});
 	}
+
 </script>

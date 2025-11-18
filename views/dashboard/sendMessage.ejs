@@ -1,159 +1,271 @@
-<div class="page-heading">
-	<div class="page-title">
-		<div class="row">
-			<div class="col-12 col-md-6 order-md-1 order-last">
-				<h3>Send Messages</h3>
-				<p class="text-subtitle text-muted">You Can Send Any Message With Your Session</p>
-			</div>
-			<div class="col-12 col-md-6 order-md-2 order-first">
-				<nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end">
-					<ol class="breadcrumb">
-						<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-						<li class="breadcrumb-item active" aria-current="page">Send Message</li>
-					</ol>
-				</nav>
-			</div>
-		</div>
+<style>
+	.message-hero {
+		background: linear-gradient(120deg, #0f172a, #312e81, #6366f1);
+		color: #fff;
+		border-radius: 24px;
+		padding: 2rem;
+		box-shadow: 0 20px 45px rgba(15, 23, 42, 0.3);
+	}
+	.message-hero .badge {
+		background: rgba(255, 255, 255, 0.18);
+		padding: 0.35rem 0.9rem;
+		border-radius: 999px;
+		font-weight: 600;
+	}
+	.send-card {
+		border-radius: 18px;
+		box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+		overflow: hidden;
+	}
+	.send-card img {
+		object-fit: cover;
+		height: 190px;
+	}
+	.send-card .card-footer {
+		border-top: 1px solid rgba(15, 23, 42, 0.05);
+	}
+	.feature-icon {
+		font-size: 1.25rem;
+		width: 40px;
+		height: 40px;
+		border-radius: 12px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-right: 0.6rem;
+	}
+	.feature-icon.text {
+		background: rgba(99, 102, 241, 0.15);
+		color: #6366f1;
+	}
+	.feature-icon.media {
+		background: rgba(16, 185, 129, 0.15);
+		color: #10b981;
+	}
+	.feature-icon.list {
+		background: rgba(245, 158, 11, 0.15);
+		color: #f59e0b;
+	}
+	.badge-pill {
+		background: rgba(99, 102, 241, 0.1);
+		color: #4f46e5;
+		border-radius: 999px;
+		padding: 0.25rem 0.75rem;
+		font-weight: 600;
+	}
+</style>
+
+<div class="page-heading d-flex flex-wrap justify-content-between align-items-center gap-2">
+	<div>
+		<h3 class="mb-1">Send Messages</h3>
+		<p class="text-muted mb-0">Kirim teks, media, stiker, produk, dan pesan interaktif dari WhatsApp gateway Anda.</p>
 	</div>
-	<section id="content-types">
-		<div class="row">
-			<div class="col-xl-4 col-md-6 col-sm-12">
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h4 class="card-title"><i class="fa-solid fa-font"></i>&nbsp;&nbsp; Send Text</h4>
-							<p class="card-text">Send a simple text message</p>
+	<nav aria-label="breadcrumb">
+		<ol class="breadcrumb mb-0">
+			<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+			<li class="breadcrumb-item active" aria-current="page">Send Message</li>
+		</ol>
+	</nav>
+</div>
+
+<div class="message-hero mb-4">
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+		<div>
+			<p class="badge text-uppercase mb-3"><i class="fa-solid fa-paper-plane"></i> Broadcast Center</p>
+			<h2 class="fw-bold">Kendalikan Semua Format Pesan</h2>
+			<p class="mb-0">Gunakan tombol “Try Now!” pada tiap kartu untuk mengakses form cepat sesuai jenis pesan.</p>
+		</div>
+		<span class="badge-pill">Active Session: <%= Array.isArray(session) && session.length ? session[0].session_name : '—' %></span>
+	</div>
+</div>
+
+<section id="content-types">
+	<div class="row g-4">
+		<div class="col-xl-4 col-md-6 col-sm-12">
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon text"><i class="fa-solid fa-font"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Text</h4>
+								<small class="text-muted">Simple text & mention</small>
+							</div>
 						</div>
-						<img class="img-fluid w-100" src="/image/sendText.png" alt="Card image send text" />
+						<p class="card-text">Kirim pesan teks sederhana beserta mention jika diperlukan.</p>
 					</div>
-					<div class="card-footer d-flex justify-content-between">
-						<span>Try Now!</span>
-						<button class="btn btn-primary" onclick="alertSendText()"><i class="fa-solid fa-font"></i>&nbsp;&nbsp; Send Text</button>
+					<img class="img-fluid w-100" src="/image/sendText.png" alt="Send text" />
+				</div>
+				<div class="card-footer d-flex justify-content-between align-items-center">
+					<span class="text-muted">Try Now!</span>
+					<button class="btn btn-outline-primary" onclick="alertSendText()"><i class="fa-solid fa-paper-plane"></i>&nbsp;Send Text</button>
+				</div>
+			</div>
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon list"><i class="fa-solid fa-square-check"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Buttons</h4>
+								<small class="text-muted">Up to 3 button + URL/Call</small>
+							</div>
+						</div>
+						<p class="card-text">Kirim quick reply dengan opsi URL/Call dan gambar opsional.</p>
+					</div>
+					<img src="/image/sendButton.png" class="card-img-top img-fluid" alt="Send button" />
+				</div>
+				<div class="card-footer d-flex justify-content-between align-items-center">
+					<span class="text-muted">Try Now!</span>
+					<button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample">
+						<i class="fa-solid fa-square-check"></i>&nbsp;Config Buttons
+					</button>
+				</div>
+			</div>
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon list"><i class="fa-solid fa-map-location-dot"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Location</h4>
+								<small class="text-muted">Longitude & Latitude</small>
+							</div>
+						</div>
+						<p class="card-text">Bagikan titik koordinat lengkap dengan lat/long.</p>
+					</div>
+					<img class="img-fluid w-100" src="/image/sendLocation.png" alt="Send location" />
+					<div class="card-footer d-flex justify-content-between align-items-center">
+						<span class="text-muted">Try Now!</span>
+						<button class="btn btn-outline-primary" onclick="alertSendLocation()"><i class="fa-solid fa-map-location-dot"></i>&nbsp;Send Location</button>
 					</div>
 				</div>
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h5 class="card-title"><i class="fa-solid fa-square-check"></i>&nbsp; Send Buttons</h5>
-							<p class="card-text">Send message button (maximum 3 buttons) with additional call button and url button</p>
+			</div>
+		</div>
+		<div class="col-xl-4 col-md-6 col-sm-12">
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon list"><i class="fa-solid fa-address-card"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Contact</h4>
+								<small class="text-muted">Multi contact</small>
+							</div>
 						</div>
-						<img src="/image/sendButton.png" class="card-img-top img-fluid" alt="Card image send button" />
+						<p class="card-text">Kirim satu atau lebih kontak (vCard) langsung dari gateway.</p>
 					</div>
-					<div class="card-footer d-flex justify-content-between">
-						<span>Try Now!</span>
-						<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-							<i class="fa-solid fa-square-check"></i>&nbsp; Send Buttons
+					<img src="/image/sendContact.png" class="card-img-top img-fluid" alt="Send contact" />
+				</div>
+				<div class="card-footer d-flex justify-content-between align-items-center">
+					<span class="text-muted">Try Now!</span>
+					<button class="btn btn-outline-primary" onclick="alertSendContact()"><i class="fa-solid fa-address-card"></i>&nbsp;Send Contact</button>
+				</div>
+			</div>
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon list"><i class="fa-solid fa-list-ul"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send List Message</h4>
+								<small class="text-muted">Daftar opsi template</small>
+							</div>
+						</div>
+						<p class="card-text">Kirim list interaktif (hingga 20 item). Form detail tersedia di bawah.</p>
+					</div>
+					<div id="carouselList" class="carousel slide" data-bs-ride="carousel">
+						<div class="carousel-inner">
+							<div class="carousel-item active">
+								<img src="/image/sendList.png" class="d-block w-100" alt="Send List 1" />
+							</div>
+							<div class="carousel-item">
+								<img src="/image/sendList2.png" class="d-block w-100" alt="Send List 2" />
+							</div>
+						</div>
+					</div>
+					<div class="card-footer d-flex justify-content-between align-items-center">
+						<span class="text-muted">Try Now!</span>
+						<button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample2">
+							<i class="fa-solid fa-list-ul"></i>&nbsp;Configure List
 						</button>
 					</div>
 				</div>
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h4 class="card-title"><i class="fa-solid fa-map-location-dot"></i>&nbsp; Send Location</h4>
-							<p class="card-text">Send location with Latitude and Longitude coordinates</p>
-						</div>
-						<img class="img-fluid w-100" src="/image/sendLocation.png" alt="Card image send location" />
-						<div class="card-footer d-flex justify-content-between">
-							<span>Try Now!</span>
-							<button class="btn btn-primary" onclick="alertSendLocation()"><i class="fa-solid fa-map-location-dot"></i>&nbsp; Send Location</button>
-						</div>
-					</div>
-				</div>
 			</div>
-			<div class="col-xl-4 col-md-6 col-sm-12">
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h5 class="card-title"><i class="fa-solid fa-address-card"></i>&nbsp; Send Contact</h5>
-							<p class="card-text">Sending one or more contacts</p>
-						</div>
-						<img src="/image/sendContact.png" class="card-img-top img-fluid" alt="singleminded" />
-					</div>
-					<div class="card-footer d-flex justify-content-between">
-						<span>Try Now!</span>
-						<button class="btn btn-primary" onclick="alertSendContact()"><i class="fa-solid fa-address-card"></i>&nbsp; Send Contact</button>
-					</div>
-				</div>
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h4 class="card-title"><i class="fa-solid fa-list-ul"></i>&nbsp; Send List Message</h4>
-							<p class="card-text">Send a message list along with the description</p>
-						</div>
-						<div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
-							<div class="carousel-inner">
-								<div class="carousel-item active">
-									<img src="/image/sendList.png" class="d-block w-100" alt="Send List 1" />
-								</div>
-								<div class="carousel-item">
-									<img src="/image/sendList2.png" class="d-block w-100" alt="Send List 2" />
-								</div>
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon list"><i class="fa-solid fa-cart-shopping"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Product</h4>
+								<small class="text-muted">Katalog dengan harga</small>
 							</div>
 						</div>
-						<div class="card-footer d-flex justify-content-between">
-							<span>Try Now!</span>
-							<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample2" aria-expanded="false" aria-controls="collapseExample">
-								<i class="fa-solid fa-list-ul"></i>&nbsp; Send List Message
-							</button>
-						</div>
+						<p class="card-text">Kirim product message lengkap dengan harga & diskon.</p>
 					</div>
+					<img src="/image/sendProduct.png" class="card-img-top img-fluid" alt="Send product" />
 				</div>
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h5 class="card-title"><i class="fa-solid fa-cart-shopping"></i>&nbsp; Send Product</h5>
-							<p class="card-text">Send a product message with an additional discounted price</p>
-						</div>
-						<img src="/image/sendProduct.png" class="card-img-top img-fluid" alt="Card image send Product" />
-					</div>
-					<div class="card-footer d-flex justify-content-between">
-						<span>Try Now!</span>
-						<button class="btn btn-primary" onclick="alertSendProduct()"><i class="fa-solid fa-cart-shopping"></i>&nbsp; Send Product</button>
-					</div>
-				</div>
-			</div>
-			<div class="col-xl-4 col-md-6 col-sm-12">
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h4 class="card-title"><i class="fa-solid fa-folder-open"></i>&nbsp;&nbsp; Send Media</h4>
-							<p class="card-text">Send a media message can be with a caption</p>
-						</div>
-						<div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
-							<div class="carousel-inner">
-								<div class="carousel-item active">
-									<img src="/image/sendMedia.png" class="d-block w-100" alt="Send Image" />
-								</div>
-								<div class="carousel-item">
-									<img src="/image/sendMedia2.png" class="d-block w-100" alt="Send PDF" />
-								</div>
-								<div class="carousel-item">
-									<img src="/image/sendMedia3.png" class="d-block w-100" alt="Send Excel" />
-								</div>
-							</div>
-						</div>
-						<div class="card-footer d-flex justify-content-between">
-							<span>Try Now!</span>
-							<button class="btn btn-primary" onclick="alertSendMedia()"><i class="fa-solid fa-folder-open"></i>&nbsp;&nbsp; Send Media</button>
-						</div>
-					</div>
-				</div>
-				<div class="card">
-					<div class="card-content">
-						<div class="card-body">
-							<h5 class="card-title"><i class="fa-solid fa-image"></i>&nbsp; Send Sticker</h5>
-							<p class="card-text">Send sticker messages with custom packname and author</p>
-						</div>
-						<img src="/image/sendSticker.png" class="card-img-top img-fluid" alt="Card image send Sticker" />
-					</div>
-					<div class="card-footer d-flex justify-content-between">
-						<span>Try Now!</span>
-						<button class="btn btn-primary" onclick="alertSendSticker()"><i class="fa-solid fa-image"></i>&nbsp; Send Sticker</button>
-					</div>
+				<div class="card-footer d-flex justify-content-between align-items-center">
+					<span class="text-muted">Try Now!</span>
+					<button class="btn btn-outline-primary" onclick="alertSendProduct()"><i class="fa-solid fa-cart-shopping"></i>&nbsp;Send Product</button>
 				</div>
 			</div>
 		</div>
-	</section>
+		<div class="col-xl-4 col-md-6 col-sm-12">
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon media"><i class="fa-solid fa-folder-open"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Media</h4>
+								<small class="text-muted">Image / Video / Document</small>
+							</div>
+						</div>
+						<p class="card-text">Kirim gambar, video, audio, atau dokumen lengkap dengan caption.</p>
+					</div>
+					<div id="carouselMedia" class="carousel slide" data-bs-ride="carousel">
+						<div class="carousel-inner">
+							<div class="carousel-item active">
+								<img src="/image/sendMedia.png" class="d-block w-100" alt="Send Image" />
+							</div>
+							<div class="carousel-item">
+								<img src="/image/sendMedia2.png" class="d-block w-100" alt="Send PDF" />
+							</div>
+							<div class="carousel-item">
+								<img src="/image/sendMedia3.png" class="d-block w-100" alt="Send Excel" />
+							</div>
+						</div>
+					</div>
+					<div class="card-footer d-flex justify-content-between align-items-center">
+						<span class="text-muted">Try Now!</span>
+						<button class="btn btn-outline-primary" onclick="alertSendMedia()"><i class="fa-solid fa-folder-open"></i>&nbsp;Send Media</button>
+					</div>
+				</div>
+			</div>
+			<div class="card send-card">
+				<div class="card-content">
+					<div class="card-body">
+						<div class="d-flex align-items-center mb-3">
+							<span class="feature-icon media"><i class="fa-solid fa-image"></i></span>
+							<div>
+								<h4 class="card-title mb-0">Send Sticker</h4>
+								<small class="text-muted">Custom packname & author</small>
+							</div>
+						</div>
+						<p class="card-text">Kirim stiker dari file lokal ataupun URL.</p>
+					</div>
+					<img src="/image/sendSticker.png" class="card-img-top img-fluid" alt="Send Sticker" />
+				</div>
+				<div class="card-footer d-flex justify-content-between align-items-center">
+					<span class="text-muted">Try Now!</span>
+					<button class="btn btn-outline-primary" onclick="alertSendSticker()"><i class="fa-solid fa-image"></i>&nbsp;Send Sticker</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
 	<section id="collapseExample" class="collapse">
 		<div class="row match-height">
 			<div class="col-12">
