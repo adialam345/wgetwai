@@ -1,57 +1,205 @@
 <style>
 	.message-hero {
-		background: linear-gradient(120deg, #0f172a, #312e81, #6366f1);
+		background: linear-gradient(120deg, #202d72, #1b9aaa, #6dd5ed);
 		color: #fff;
-		border-radius: 24px;
+		border-radius: 20px;
 		padding: 2rem;
-		box-shadow: 0 20px 45px rgba(15, 23, 42, 0.3);
+		box-shadow: 0 10px 35px rgba(17, 24, 39, 0.35);
+		margin-bottom: 2rem;
 	}
 	.message-hero .badge {
-		background: rgba(255, 255, 255, 0.18);
+		background: rgba(255, 255, 255, 0.2);
+		backdrop-filter: blur(6px);
 		padding: 0.35rem 0.9rem;
 		border-radius: 999px;
 		font-weight: 600;
 	}
 	.send-card {
-		border-radius: 18px;
-		box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+		border-radius: 16px;
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		background: #fff;
+		box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
 		overflow: hidden;
+		transition: all 0.3s ease;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
-	.send-card img {
-		object-fit: cover;
-		height: 190px;
+	.send-card:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 6px 24px rgba(15, 23, 42, 0.12);
+		border-color: rgba(99, 102, 241, 0.2);
+	}
+	.send-card .card-body {
+		padding: 2.25rem 2rem;
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 180px;
+	}
+	.send-card .card-body > .d-flex {
+		margin-bottom: 1.25rem;
+	}
+	.send-card .card-body .card-title {
+		font-size: 1.3rem;
+		font-weight: 600;
+		line-height: 1.3;
+		color: #1f2937;
+		margin-bottom: 0;
+	}
+	.send-card .card-body small {
+		display: block;
+		margin-top: 0.4rem;
+		color: #6b7280;
+		font-size: 0.825rem;
+	}
+	.send-card .card-body .card-text {
+		margin-bottom: 0;
+		margin-top: 0.75rem;
+		font-size: 0.925rem;
+		line-height: 1.65;
+		color: #6b7280;
+		flex: 1;
 	}
 	.send-card .card-footer {
-		border-top: 1px solid rgba(15, 23, 42, 0.05);
+		border-top: 1px solid rgba(0, 0, 0, 0.06);
+		padding: 1.25rem 1.75rem;
+		background: rgba(249, 250, 251, 0.8);
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+	}
+	.send-card .card-footer .btn {
+		width: 100%;
+		justify-content: center;
 	}
 	.feature-icon {
-		font-size: 1.25rem;
-		width: 40px;
-		height: 40px;
-		border-radius: 12px;
+		font-size: 1.5rem;
+		width: 56px;
+		height: 56px;
+		border-radius: 14px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		margin-right: 0.6rem;
+		margin-right: 1rem;
+		flex-shrink: 0;
+		transition: all 0.3s ease;
+	}
+	.send-card:hover .feature-icon {
+		transform: scale(1.1) rotate(5deg);
 	}
 	.feature-icon.text {
-		background: rgba(99, 102, 241, 0.15);
+		background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
 		color: #6366f1;
 	}
 	.feature-icon.media {
-		background: rgba(16, 185, 129, 0.15);
+		background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
 		color: #10b981;
 	}
 	.feature-icon.list {
-		background: rgba(245, 158, 11, 0.15);
+		background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 146, 60, 0.15));
 		color: #f59e0b;
 	}
 	.badge-pill {
+		background: rgba(255, 255, 255, 0.2);
+		backdrop-filter: blur(6px);
+		color: #fff;
+		border-radius: 999px;
+		padding: 0.4rem 1rem;
+		font-weight: 600;
+		font-size: 0.875rem;
+	}
+	.card.glass-card {
+		border-radius: 16px;
+		border: 1px solid rgba(0, 0, 0, 0.05);
+		box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+	}
+	.form-group {
+		margin-bottom: 1.25rem;
+	}
+	.form-group label {
+		font-weight: 600;
+		margin-bottom: 0.5rem;
+		color: #374151;
+		font-size: 0.875rem;
+	}
+	.form-control, .form-select {
+		border-radius: 8px;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		padding: 0.625rem 0.875rem;
+		transition: all 0.2s ease;
+	}
+	.form-control:focus, .form-select:focus {
+		border-color: #6366f1;
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+	}
+	.card-header {
+		background: rgba(0, 0, 0, 0.02);
+		border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+		padding: 1.25rem 1.5rem;
+	}
+	.card-header h4, .card-header h5 {
+		margin: 0;
+		font-weight: 600;
+	}
+	.collapse {
+		margin-top: 1.5rem;
+	}
+	.collapse .card {
+		border-radius: 16px;
+		overflow: hidden;
+	}
+	.btn {
+		border-radius: 10px;
+		font-weight: 600;
+		padding: 0.75rem 1.5rem;
+		transition: all 0.3s ease;
+		font-size: 0.9rem;
+	}
+	.btn-primary {
+		background: linear-gradient(135deg, #6366f1, #8b5cf6);
+		border: none;
+		box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+	}
+	.btn-primary:hover {
+		background: linear-gradient(135deg, #4f46e5, #7c3aed);
+		transform: translateY(-2px);
+		box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+	}
+	.alert {
+		border-radius: 10px;
+		border: none;
+		padding: 0.875rem 1rem;
+	}
+	.alert-info {
 		background: rgba(99, 102, 241, 0.1);
 		color: #4f46e5;
-		border-radius: 999px;
-		padding: 0.25rem 0.75rem;
+	}
+	.alert-warning {
+		background: rgba(245, 158, 11, 0.1);
+		color: #d97706;
+	}
+	.card-title {
+		font-size: 1.125rem;
 		font-weight: 600;
+	}
+	.card-text {
+		color: #6b7280;
+		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+	#content-types .col-xl-4,
+	#content-types .col-md-6,
+	#content-types .col-sm-12 {
+		display: flex;
+		flex-direction: column;
+	}
+	#content-types .col-xl-4 > .card,
+	#content-types .col-md-6 > .card,
+	#content-types .col-sm-12 > .card {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
 	}
 </style>
 
@@ -80,187 +228,134 @@
 </div>
 
 <section id="content-types">
-	<div class="row g-4">
+	<div class="row g-4 align-items-stretch">
 		<div class="col-xl-4 col-md-6 col-sm-12">
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon text"><i class="fa-solid fa-font"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Text</h4>
-								<small class="text-muted">Simple text & mention</small>
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon text"><i class="fa-solid fa-font"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Text</h4>
+							<small class="text-muted">Simple text & mention</small>
 						</div>
-						<p class="card-text">Kirim pesan teks sederhana beserta mention jika diperlukan.</p>
 					</div>
-					<img class="img-fluid w-100" src="/image/sendText.png" alt="Send text" />
+					<p class="card-text">Kirim pesan teks sederhana beserta mention jika diperlukan.</p>
 				</div>
-				<div class="card-footer d-flex justify-content-between align-items-center">
-					<span class="text-muted">Try Now!</span>
-					<button class="btn btn-outline-primary" onclick="alertSendText()"><i class="fa-solid fa-paper-plane"></i>&nbsp;Send Text</button>
+				<div class="card-footer">
+					<button class="btn btn-primary" onclick="alertSendText()"><i class="fa-solid fa-paper-plane"></i>&nbsp;Send Text</button>
 				</div>
 			</div>
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon list"><i class="fa-solid fa-square-check"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Buttons</h4>
-								<small class="text-muted">Up to 3 button + URL/Call</small>
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon list"><i class="fa-solid fa-square-check"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Buttons</h4>
+							<small class="text-muted">Up to 3 button + URL/Call</small>
 						</div>
-						<p class="card-text">Kirim quick reply dengan opsi URL/Call dan gambar opsional.</p>
 					</div>
-					<img src="/image/sendButton.png" class="card-img-top img-fluid" alt="Send button" />
+					<p class="card-text">Kirim quick reply dengan opsi URL/Call dan gambar opsional.</p>
 				</div>
-				<div class="card-footer d-flex justify-content-between align-items-center">
-					<span class="text-muted">Try Now!</span>
-					<button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample">
+				<div class="card-footer">
+					<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample">
 						<i class="fa-solid fa-square-check"></i>&nbsp;Config Buttons
 					</button>
 				</div>
 			</div>
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon list"><i class="fa-solid fa-map-location-dot"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Location</h4>
-								<small class="text-muted">Longitude & Latitude</small>
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon list"><i class="fa-solid fa-map-location-dot"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Location</h4>
+							<small class="text-muted">Longitude & Latitude</small>
 						</div>
-						<p class="card-text">Bagikan titik koordinat lengkap dengan lat/long.</p>
 					</div>
-					<img class="img-fluid w-100" src="/image/sendLocation.png" alt="Send location" />
-					<div class="card-footer d-flex justify-content-between align-items-center">
-						<span class="text-muted">Try Now!</span>
-						<button class="btn btn-outline-primary" onclick="alertSendLocation()"><i class="fa-solid fa-map-location-dot"></i>&nbsp;Send Location</button>
-					</div>
+					<p class="card-text">Bagikan titik koordinat lengkap dengan lat/long.</p>
+				</div>
+				<div class="card-footer">
+					<button class="btn btn-primary" onclick="alertSendLocation()"><i class="fa-solid fa-map-location-dot"></i>&nbsp;Send Location</button>
 				</div>
 			</div>
 		</div>
 		<div class="col-xl-4 col-md-6 col-sm-12">
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon list"><i class="fa-solid fa-address-card"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Contact</h4>
-								<small class="text-muted">Multi contact</small>
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon list"><i class="fa-solid fa-address-card"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Contact</h4>
+							<small class="text-muted">Multi contact</small>
 						</div>
-						<p class="card-text">Kirim satu atau lebih kontak (vCard) langsung dari gateway.</p>
 					</div>
-					<img src="/image/sendContact.png" class="card-img-top img-fluid" alt="Send contact" />
+					<p class="card-text">Kirim satu atau lebih kontak (vCard) langsung dari gateway.</p>
 				</div>
-				<div class="card-footer d-flex justify-content-between align-items-center">
-					<span class="text-muted">Try Now!</span>
-					<button class="btn btn-outline-primary" onclick="alertSendContact()"><i class="fa-solid fa-address-card"></i>&nbsp;Send Contact</button>
+				<div class="card-footer">
+					<button class="btn btn-primary" onclick="alertSendContact()"><i class="fa-solid fa-address-card"></i>&nbsp;Send Contact</button>
 				</div>
 			</div>
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon list"><i class="fa-solid fa-list-ul"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send List Message</h4>
-								<small class="text-muted">Daftar opsi template</small>
-							</div>
-						</div>
-						<p class="card-text">Kirim list interaktif (hingga 20 item). Form detail tersedia di bawah.</p>
-					</div>
-					<div id="carouselList" class="carousel slide" data-bs-ride="carousel">
-						<div class="carousel-inner">
-							<div class="carousel-item active">
-								<img src="/image/sendList.png" class="d-block w-100" alt="Send List 1" />
-							</div>
-							<div class="carousel-item">
-								<img src="/image/sendList2.png" class="d-block w-100" alt="Send List 2" />
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon list"><i class="fa-solid fa-list-ul"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send List Message</h4>
+							<small class="text-muted">Daftar opsi template</small>
 						</div>
 					</div>
-					<div class="card-footer d-flex justify-content-between align-items-center">
-						<span class="text-muted">Try Now!</span>
-						<button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample2">
-							<i class="fa-solid fa-list-ul"></i>&nbsp;Configure List
-						</button>
-					</div>
+					<p class="card-text">Kirim list interaktif (hingga 20 item). Form detail tersedia di bawah.</p>
+				</div>
+				<div class="card-footer">
+					<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample2">
+						<i class="fa-solid fa-list-ul"></i>&nbsp;Configure List
+					</button>
 				</div>
 			</div>
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon list"><i class="fa-solid fa-cart-shopping"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Product</h4>
-								<small class="text-muted">Katalog dengan harga</small>
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon list"><i class="fa-solid fa-cart-shopping"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Product</h4>
+							<small class="text-muted">Katalog dengan harga</small>
 						</div>
-						<p class="card-text">Kirim product message lengkap dengan harga & diskon.</p>
 					</div>
-					<img src="/image/sendProduct.png" class="card-img-top img-fluid" alt="Send product" />
+					<p class="card-text">Kirim product message lengkap dengan harga & diskon.</p>
 				</div>
-				<div class="card-footer d-flex justify-content-between align-items-center">
-					<span class="text-muted">Try Now!</span>
-					<button class="btn btn-outline-primary" onclick="alertSendProduct()"><i class="fa-solid fa-cart-shopping"></i>&nbsp;Send Product</button>
+				<div class="card-footer">
+					<button class="btn btn-primary" onclick="alertSendProduct()"><i class="fa-solid fa-cart-shopping"></i>&nbsp;Send Product</button>
 				</div>
 			</div>
 		</div>
 		<div class="col-xl-4 col-md-6 col-sm-12">
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon media"><i class="fa-solid fa-folder-open"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Media</h4>
-								<small class="text-muted">Image / Video / Document</small>
-							</div>
-						</div>
-						<p class="card-text">Kirim gambar, video, audio, atau dokumen lengkap dengan caption.</p>
-					</div>
-					<div id="carouselMedia" class="carousel slide" data-bs-ride="carousel">
-						<div class="carousel-inner">
-							<div class="carousel-item active">
-								<img src="/image/sendMedia.png" class="d-block w-100" alt="Send Image" />
-							</div>
-							<div class="carousel-item">
-								<img src="/image/sendMedia2.png" class="d-block w-100" alt="Send PDF" />
-							</div>
-							<div class="carousel-item">
-								<img src="/image/sendMedia3.png" class="d-block w-100" alt="Send Excel" />
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon media"><i class="fa-solid fa-folder-open"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Media</h4>
+							<small class="text-muted">Image / Video / Document</small>
 						</div>
 					</div>
-					<div class="card-footer d-flex justify-content-between align-items-center">
-						<span class="text-muted">Try Now!</span>
-						<button class="btn btn-outline-primary" onclick="alertSendMedia()"><i class="fa-solid fa-folder-open"></i>&nbsp;Send Media</button>
-					</div>
+					<p class="card-text">Kirim gambar, video, audio, atau dokumen lengkap dengan caption.</p>
+				</div>
+				<div class="card-footer">
+					<button class="btn btn-primary" onclick="alertSendMedia()"><i class="fa-solid fa-folder-open"></i>&nbsp;Send Media</button>
 				</div>
 			</div>
 			<div class="card send-card">
-				<div class="card-content">
-					<div class="card-body">
-						<div class="d-flex align-items-center mb-3">
-							<span class="feature-icon media"><i class="fa-solid fa-image"></i></span>
-							<div>
-								<h4 class="card-title mb-0">Send Sticker</h4>
-								<small class="text-muted">Custom packname & author</small>
-							</div>
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<span class="feature-icon media"><i class="fa-solid fa-image"></i></span>
+						<div>
+							<h4 class="card-title mb-0">Send Sticker</h4>
+							<small class="text-muted">Custom packname & author</small>
 						</div>
-						<p class="card-text">Kirim stiker dari file lokal ataupun URL.</p>
 					</div>
-					<img src="/image/sendSticker.png" class="card-img-top img-fluid" alt="Send Sticker" />
+					<p class="card-text">Kirim stiker dari file lokal ataupun URL.</p>
 				</div>
-				<div class="card-footer d-flex justify-content-between align-items-center">
-					<span class="text-muted">Try Now!</span>
-					<button class="btn btn-outline-primary" onclick="alertSendSticker()"><i class="fa-solid fa-image"></i>&nbsp;Send Sticker</button>
+				<div class="card-footer">
+					<button class="btn btn-primary" onclick="alertSendSticker()"><i class="fa-solid fa-image"></i>&nbsp;Send Sticker</button>
 				</div>
 			</div>
 		</div>
@@ -269,13 +364,14 @@
 	<section id="collapseExample" class="collapse">
 		<div class="row match-height">
 			<div class="col-12">
-				<div class="card">
+				<div class="card glass-card">
 					<div class="card-header">
-						<h4 class="card-title"><i class="fa-solid fa-square-check"></i>&nbsp; Send Buttons</h4>
+						<h4 class="card-title"><i class="fa-solid fa-square-check me-2"></i>Send Buttons</h4>
+						<p class="text-muted mb-0 small mt-2">Konfigurasi pesan dengan tombol interaktif (URL, Call, atau Quick Reply)</p>
 					</div>
 					<div class="card-content">
 						<div class="card-body">
-							<div class="row">
+							<div class="row g-3">
 								<div class="col-md-6 col-12">
 									<div class="form-group">
 										<label>Sender/Session Name</label>
@@ -304,23 +400,32 @@
 										<input id="textFooterButton" type="text" name="textFooter" class="form-control" placeholder="Footer Text" />
 									</div>
 								</div>
-								<p style="color: red"><strong>*Send With Image is Optional!</strong></p>
+								<div class="col-12">
+									<div class="alert alert-info d-flex align-items-center mb-3">
+										<i class="fa-solid fa-info-circle me-2"></i>
+										<small class="mb-0"><strong>Catatan:</strong> Gambar bersifat opsional. Gunakan file atau URL.</small>
+									</div>
+								</div>
 								<div class="col-md-6 col-12">
 									<div class="form-group">
 										<label>File Image</label>
-										<br />
-										<input type="file" name="fileButton" accept="image/png, image/gif, image/jpeg, video/mp4" />
-										<p><small class="text-muted">If You Want Send With Image, Choose one, using file or URL</small></p>
+										<input type="file" name="fileButton" accept="image/png, image/gif, image/jpeg, video/mp4" class="form-control" />
+										<small class="text-muted">Pilih file gambar dari komputer</small>
 									</div>
 								</div>
 								<div class="col-md-6 col-12">
 									<div class="form-group">
 										<label>URL Image</label>
 										<input id="urlButton" type="text" name="url" class="form-control" placeholder="https://i.postimg.cc/G2m1dtH5/cat.jpg" />
-										<p><small class="text-muted">If You Want Send With Image, Choose one, using file or URL</small></p>
+										<small class="text-muted">Atau masukkan URL gambar</small>
 									</div>
 								</div>
-								<p style="color: red"><strong>*You don't need to complete all of the buttons below; each will send the message!</strong></p>
+								<div class="col-12">
+									<div class="alert alert-warning d-flex align-items-center mb-3">
+										<i class="fa-solid fa-exclamation-triangle me-2"></i>
+										<small class="mb-0"><strong>Penting:</strong> Tidak perlu mengisi semua tombol. Setiap tombol yang diisi akan mengirim pesan.</small>
+									</div>
+								</div>
 								<div class="col-md-6 col-12">
 									<div class="form-group">
 										<label>Text URL Button</label>
@@ -392,13 +497,13 @@
 		</div>
 	</section>
 	<section id="collapseExample2" class="collapse">
-		<div class="card">
+		<div class="card glass-card">
 			<div class="card-header">
-				<h5 class="card-title"><i class="fa-solid fa-list-ul"></i>&nbsp; Send List Message</h5>
-				<p>The maximum message list option is 20, but here I only give 5 row options that can be filled in</p>
+				<h4 class="card-title"><i class="fa-solid fa-list-ul me-2"></i>Send List Message</h4>
+				<p class="text-muted mb-0 small mt-2">Maksimal 20 opsi list. Form ini menyediakan 5 baris yang dapat diisi.</p>
 			</div>
 			<div class="card-body">
-				<div class="row">
+				<div class="row g-3">
 					<div class="col-md-6 col-12">
 						<div class="form-group">
 							<label>Sender/Session Name</label>
