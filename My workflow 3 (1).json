@@ -1,0 +1,644 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fonnte-inbox",
+        "options": {}
+      },
+      "id": "23aac502-e8c2-42a6-bf30-f503a7e2cc6b",
+      "name": "Webhook Fonnte Inbox",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        16
+      ],
+      "webhookId": "e1b0cd16-590f-4135-a794-3e88156bc917"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "webhook_from",
+              "name": "webhook_from",
+              "value": "={{ $json.body.sender }}",
+              "type": "string"
+            },
+            {
+              "id": "webhook_type",
+              "name": "webhook_type",
+              "value": "={{ $json.body.type }}",
+              "type": "string"
+            },
+            {
+              "id": "webhook_text",
+              "name": "webhook_text",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "webhook_image",
+              "name": "webhook_image",
+              "value": "={{ $json.body.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "ea892710-dbe7-4e2e-9a5e-9d933d89a143",
+      "name": "Simpan Data Webhook",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.webhook_type}}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "82dc1dd7-8d4c-4558-afdd-efd2aadb6c89"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bb554d60-9145-4dae-91b7-14a22fbff4d2",
+                    "leftValue": "={{$json.webhook_type}}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": 0
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -656,
+        16
+      ],
+      "id": "530aefc7-b479-4b65-89df-1e0fc84fa354",
+      "name": "Switch Type Pesan"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.webhook_text}}",
+              "operation": "regex",
+              "value2": "/\\b(laporan|saldo|pemasukan|pengeluaran|sisa|uang|keuangan|report|total|hitung|berapa|riwayat|histori)\\b/i"
+            }
+          ]
+        }
+      },
+      "id": "67967520-a1aa-4232-984d-5d9121229a39",
+      "name": "Cek Pertanyaan Keuangan",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1Wyzbc1MslOF9UtfrjlkDKin02CYySH9UGQPSBlO6Cks/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Wyzbc1MslOF9UtfrjlkDKin02CYySH9UGQPSBlO6Cks/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "62ccddbd-37a2-4a39-88df-3545a2c9452e",
+      "name": "Google Sheets - Ambil Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        16,
+        -176
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "1biAVsqtIzGHJloZ",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Debug - Analisis data keuangan dan generate response laporan */\n\n// Ambil data webhook dari node Set sebelumnya\nconst setData = $('Simpan Data Webhook').first().json;\nconsole.log('1. Data dari Simpan Data Webhook:', JSON.stringify(setData, null, 2));\n\n// Ambil pertanyaan user dari webhook\nconst userMessage = (setData && setData.webhook_text) ? setData.webhook_text.toLowerCase() : '';\nconst fromNumber = (setData && setData.webhook_from) ? setData.webhook_from : 'unknown';\n\nconsole.log('2. userMessage:', userMessage);\nconsole.log('3. fromNumber:', fromNumber);\n\n// Fungsi untuk menganalisis data transaksi berdasarkan periode\nfunction analyzeFinancialData(transactions, period = 'all') {\n  const now = new Date();\n  let filteredTransactions = [];\n  \n  // Filter berdasarkan periode\n  switch(period.toLowerCase()) {\n    case 'hari ini':\n    case 'today':\n    case 'sehari':\n      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n      filteredTransactions = transactions.filter(t => {\n        const transDate = new Date(t.tanggal);\n        return transDate >= today;\n      });\n      break;\n      \n    case 'minggu ini':\n    case 'week':\n    case 'seminggu':\n      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n      filteredTransactions = transactions.filter(t => new Date(t.tanggal) >= weekAgo);\n      break;\n      \n    case 'bulan ini':\n    case 'month':\n    case 'sebulan':\n      const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);\n      filteredTransactions = transactions.filter(t => new Date(t.tanggal) >= monthAgo);\n      break;\n      \n    default:\n      filteredTransactions = transactions;\n  }\n  \n  // Hitung statistik\n  let pemasukan = 0;\n  let pengeluaran = 0;\n  const transaksiPemasukan = [];\n  const transaksiPengeluaran = [];\n  \n  filteredTransactions.forEach(trans => {\n    const nominal = parseInt(trans.nominal?.toString().replace(/\\D/g, '') || '0');\n    \n    if (trans.jenis === 'pemasukan') {\n      pemasukan += nominal;\n      transaksiPemasukan.push({\n        tanggal: trans.tanggal,\n        nominal: nominal,\n        deskripsi: trans.deskripsi\n      });\n    } else if (trans.jenis === 'pengeluaran') {\n      pengeluaran += nominal;\n      transaksiPengeluaran.push({\n        tanggal: trans.tanggal,\n        nominal: nominal,\n        deskripsi: trans.deskripsi\n      });\n    }\n  });\n  \n  const saldo = pemasukan - pengeluaran;\n  \n  return {\n    pemasukan,\n    pengeluaran,\n    saldo,\n    totalTransaksi: filteredTransactions.length,\n    jumlahPemasukan: transaksiPemasukan.length,\n    jumlahPengeluaran: transaksiPengeluaran.length,\n    transaksiPemasukan: transaksiPemasukan.slice(-5),\n    transaksiPengeluaran: transaksiPengeluaran.slice(-5),\n    periode: period,\n    semuaTransaksi: transactions.length\n  };\n}\n\n// Fungsi format angka\nfunction formatRupiah(angka) {\n  return 'Rp ' + parseInt(angka).toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');\n}\n\n// Ambil data dari Google Sheets\nconst transactions = items.map(item => item.json);\nconsole.log('4. Data transactions dari Google Sheets:', JSON.stringify(transactions, null, 2));\nconsole.log('5. Jumlah transactions:', transactions.length);\n\n// Deteksi periode dari pesan user\nlet periode = 'all';\nif (userMessage.match(/hari ini|sehari|today/)) {\n  periode = 'hari ini';\n} else if (userMessage.match(/minggu ini|seminggu|week/)) {\n  periode = 'minggu ini';\n} else if (userMessage.match(/bulan ini|sebulan|month/)) {\n  periode = 'bulan ini';\n}\n\nconsole.log('6. Periode terdeteksi:', periode);\n\n// Analisis data\nconst analysis = analyzeFinancialData(transactions, periode);\nconsole.log('7. Hasil analysis:', JSON.stringify(analysis, null, 2));\n\n// Generate response vertikal dengan \\n\nlet responseMessage = '';\n\nif (userMessage.match(/\\bsaldo\\b|\\bsisa\\b|\\buang\\b/)) {\n  responseMessage = `💳 *SALDO KEUANGAN*\\n📅 Periode: ${periode}\\n⬆️ Pemasukan: ${formatRupiah(analysis.pemasukan)}\\n⬇️ Pengeluaran: ${formatRupiah(analysis.pengeluaran)}\\n💰 Saldo: ${formatRupiah(analysis.saldo)}\\n📊 ${analysis.totalTransaksi} transaksi`;\n    \n} else if (userMessage.match(/\\blaporan\\b|\\breport\\b|\\briwayat\\b|\\bhistori\\b/)) {\n  responseMessage = `📈 *LAPORAN KEUANGAN*\\n📅 Periode: ${periode}\\n⬆️ Pemasukan: ${formatRupiah(analysis.pemasukan)}\\n   (${analysis.jumlahPemasukan} transaksi)\\n⬇️ Pengeluaran: ${formatRupiah(analysis.pengeluaran)}\\n   (${analysis.jumlahPengeluaran} transaksi)\\n💰 Saldo Akhir: ${formatRupiah(analysis.saldo)}\\n📊 Total: ${analysis.totalTransaksi} transaksi`;\n    \n} else {\n  responseMessage = `📊 *INFO KEUANGAN*\\n📅 Periode: ${periode}\\n⬆️ Pemasukan: ${formatRupiah(analysis.pemasukan)}\\n⬇️ Pengeluaran: ${formatRupiah(analysis.pengeluaran)}\\n💰 Saldo: ${formatRupiah(analysis.saldo)}\\n📈 ${analysis.totalTransaksi} transaksi\\n✅ ${analysis.jumlahPemasukan} pemasukan\\n❌ ${analysis.jumlahPengeluaran} pengeluaran`;\n}\n\n// Tambahkan info total semua transaksi jika berbeda\nif (periode !== 'all') {\n  responseMessage += `\\n📁 Total semua transaksi: ${analysis.semuaTransaksi}`;\n}\n\nconsole.log('8. responseMessage:', responseMessage);\nconsole.log('9. fromNumber untuk Fonnte:', fromNumber);\n\n// Return data yang sudah dianalisis\nreturn [{ \n  json: {\n    analysis: analysis,\n    responseMessage: responseMessage,\n    from: fromNumber,\n    periode: periode,\n    userQuestion: userMessage,\n    // Tambahkan field langsung untuk memudahkan akses\n    target: fromNumber,\n    message: responseMessage\n  }\n}];"
+      },
+      "id": "29adaabf-84f1-4f76-a538-a06c3200012f",
+      "name": "Analisis Data & Generate Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"contents\": [\n      {\n        \"parts\": [\n          {\n            \"text\": \"Kamu adalah asisten pencatat keuangan. Analisis teks chat user untuk menentukan:\\n- jenis transaksi: 'pemasukan' atau 'pengeluaran'\\n- nominal (angka dalam rupiah, tanpa titik/koma)\\n- deskripsi singkat transaksi\\n\\nJangan hanya mengandalkan kata 'pemasukan' atau 'pengeluaran', gunakan pemahaman konteks.\\nContoh: 'beli nasi goreng 25ribu' = pengeluaran\\nContoh: 'dapat gaji 5juta' = pemasukan\\n\\nSelalu jawab dalam format JSON murni seperti ini:\\n{\\\"jenis\\\": \\\"pemasukan\\\", \\\"nominal\\\": \\\"5000000\\\", \\\"deskripsi\\\": \\\"gaji bulanan\\\"}\\n\\nTeks user:\\n{{ $json.webhook_text }}\"\n          }\n        ]\n      }\n    ]\n  }",
+        "options": {}
+      },
+      "id": "5153e467-be61-435e-9702-d32e169de455",
+      "name": "Gemini - Analisis Teks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        16
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LO9Gg8PjuzjwvcIf",
+          "name": "Header Auth account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$json.webhook_image}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "f5c08fa8-887b-4245-aebb-9cef98e7a0fb",
+      "name": "Download Gambar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -432,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "ocr"
+      },
+      "id": "451de9c2-d16c-48e8-b32e-edea5485f861",
+      "name": "OCR (Tesseract)",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Kamu adalah asisten pencatat keuangan. Analisis teks OCR dari struk berikut untuk menentukan:\\n- jenis transaksi: 'pemasukan' atau 'pengeluaran' (struk biasanya pengeluaran)\\n- nominal: cari angka total pembayaran\\n- deskripsi: nama toko atau jenis pembelian\\n\\nJawab dalam format JSON murni seperti ini:\\n{\\\"jenis\\\": \\\"pengeluaran\\\", \\\"nominal\\\": \\\"50000\\\", \\\"deskripsi\\\": \\\"belanja di Indomaret\\\"}\\n\\nTeks OCR:\\n{{$json.text}}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "b76352f9-0a67-436e-96cb-1ea663b1cc3e",
+      "name": "Gemini - Analisis OCR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LO9Gg8PjuzjwvcIf",
+          "name": "Header Auth account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/* Parse result returned by Gemini and normalize */\n\n// Ambil data webhook dari node Set sebelumnya\nconst setData = $('Simpan Data Webhook').first().json;\n\n// Coba berbagai cara untuk mendapatkan from\nlet webhookFrom = 'unknown';\nif (setData && setData.webhook_from) {\n  webhookFrom = setData.webhook_from;\n} else if (setData && setData.from) {\n  webhookFrom = setData.from;\n} else {\n  // Fallback: coba dari input langsung\n  const inputData = $input.first().json;\n  webhookFrom = inputData.from || inputData.webhook_from || 'unknown';\n}\n\nconst webhookType = (setData && setData.webhook_type) || (setData && setData.type) || 'text';\n\n// Parse response dari Gemini\nlet raw = '';\nif ($json.candidates && Array.isArray($json.candidates) && $json.candidates[0] && $json.candidates[0].content) {\n  try { \n    raw = $json.candidates[0].content.parts[0].text; \n  } catch(e) { \n    raw = JSON.stringify($json); \n  }\n} else if ($json.body) {\n  raw = JSON.stringify($json.body);\n} else {\n  raw = JSON.stringify($json);\n}\n\n// Extract JSON substring\nlet parsed = null;\ntry {\n  const start = raw.indexOf('{');\n  const end = raw.lastIndexOf('}');\n  const jsonStr = (start !== -1 && end !== -1 && end > start) ? raw.substring(start, end + 1) : raw;\n  parsed = JSON.parse(jsonStr);\n} catch (err) {\n  parsed = { \n    jenis: 'pengeluaran', \n    nominal: '0', \n    deskripsi: raw.slice(0, 120) \n  };\n}\n\n// Normalisasi nominal (hapus karakter non-digit)\nparsed.nominal = (parsed.nominal || '0').toString().replace(/\\D/g, '');\n\n// Validasi jenis transaksi\nif (!['pemasukan', 'pengeluaran'].includes(parsed.jenis)) {\n  const d = (parsed.deskripsi || '').toLowerCase();\n  if (d.match(/jual|gaji|terima|masuk|dapat|bonus|upah|pendapatan|dibayar/)) {\n    parsed.jenis = 'pemasukan';\n  } else {\n    parsed.jenis = 'pengeluaran';\n  }\n}\n\n// Tentukan sumber berdasarkan type dari webhook\nconst sumber = (webhookType === 'image') ? 'struk' : 'chat';\n\n// Return data yang sudah dinormalisasi\nreturn [{ \n  json: {\n    tanggal: new Date().toISOString(),\n    jenis: parsed.jenis,\n    nominal: parsed.nominal,\n    deskripsi: parsed.deskripsi || 'Transaksi',\n    sumber: sumber,\n    from: webhookFrom\n  }\n}];"
+      },
+      "id": "6c7a23b1-f317-494e-a2d5-ef17cced3708",
+      "name": "Parse JSON AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1Wyzbc1MslOF9UtfrjlkDKin02CYySH9UGQPSBlO6Cks/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Wyzbc1MslOF9UtfrjlkDKin02CYySH9UGQPSBlO6Cks/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "tanggal",
+              "displayName": "tanggal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jenis",
+              "displayName": "jenis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nominal",
+              "displayName": "nominal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "deskripsi",
+              "displayName": "deskripsi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sumber",
+              "displayName": "sumber",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "93053631-e9f8-4ecc-ad8c-9cf1bd9d0ff9",
+      "name": "Google Sheets - Simpan",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        112
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "1biAVsqtIzGHJloZ",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.fonnte.com/send/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "pSdqgQL8211666a5b83T"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"target\": \"{{ $json.from }}\",\n  \"message\": \"{{ $json.jenis === 'pemasukan' ? '💰 Pemasukan Rp' + $json.nominal + ' dari ' + $json.deskripsi + ' sudah dicatat!' : '💸 Pengeluaran Rp' + $json.nominal + ' untuk ' + $json.deskripsi + ' sudah dicatat!' }}\"\n}",
+        "options": {}
+      },
+      "id": "c56c434e-f7ee-4ef7-b992-0ffec0cf6cc3",
+      "name": "Kirim Balasan ke User (Fonnte)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        112
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gqIOsGRBZVcnkORU",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.fonnte.com/send/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "pSdqgQL8211666a5b83T"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "target",
+              "value": "={{ $json.from }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.responseMessage }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "665a7c47-427d-4e4a-bedc-93f93067b5f8",
+      "name": "Kirim Response Laporan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        -176
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "gqIOsGRBZVcnkORU",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Fonnte Inbox": {
+      "main": [
+        [
+          {
+            "node": "Simpan Data Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simpan Data Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch Type Pesan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Type Pesan": {
+      "main": [
+        [
+          {
+            "node": "Cek Pertanyaan Keuangan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Gambar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cek Pertanyaan Keuangan": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Ambil Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gemini - Analisis Teks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Ambil Data": {
+      "main": [
+        [
+          {
+            "node": "Analisis Data & Generate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analisis Data & Generate Response": {
+      "main": [
+        [
+          {
+            "node": "Kirim Response Laporan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Analisis Teks": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Gambar": {
+      "main": [
+        [
+          {
+            "node": "OCR (Tesseract)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR (Tesseract)": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Analisis OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Analisis OCR": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON AI": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Simpan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Simpan": {
+      "main": [
+        [
+          {
+            "node": "Kirim Balasan ke User (Fonnte)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2751eea5-3b68-4616-9e2f-3a565e081e8f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "61262b45fa8c7d38a70e3419be35b4149770fd7ba9cd0fe280dcb8e6fc3339f6"
+  },
+  "id": "Ptdk23A2cvu6ed5D",
+  "tags": []
+}
