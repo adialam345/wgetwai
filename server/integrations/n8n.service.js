@@ -31,7 +31,7 @@ class N8NService {
 				session: sessionName,
 				sender: this.extractPhoneNumber(message),
 				pushname: message.pushname || "",
-				from: message.fromDisplay || message.from,
+				from: message.from,
 				isGroup: message.isGroupMsg,
 				type,
 				message: message.body || "",

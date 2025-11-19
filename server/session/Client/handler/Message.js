@@ -40,15 +40,11 @@ export default class Message extends Serialize {
             
             console.log("[MESSAGE] mainHandler - Serializing message");
             const m = await this.serial(this.client, message);
-            console.log("[MESSAGE] mainHandler - m.from:", m.from);
-            console.log("[MESSAGE] mainHandler - m.fromDisplay:", m.fromDisplay);
-            console.log("[MESSAGE] mainHandler - m.originalJid:", m.originalJid);
             
             console.log("[MESSAGE] mainHandler - Forwarding to N8N");
             await N8NService.forwardIncomingMessage(m, this.session);
             console.log("[MESSAGE] mainHandler - N8N forward complete");
 
-            console.log("[MESSAGE] mainHandler - Creating bot with JID:", m.from);
             const bot = new Client(this.client, m.from);
             const CMD = m.command ? m.command : null;
             

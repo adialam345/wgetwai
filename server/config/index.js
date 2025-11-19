@@ -8,20 +8,6 @@ import ConnectionSession from "../session/Session.js";
 import App from "./App.js";
 import { connectDatabase } from "./Database.js";
 
-// Global error handlers untuk prevent server crash
-process.on("unhandledRejection", (reason, promise) => {
-	console.error(modules.color("[UNHANDLED REJECTION]", "#EB6112"), modules.color(`${reason}`, "#E6B0AA"));
-	console.error("Promise:", promise);
-	// Jangan crash server, hanya log error
-});
-
-process.on("uncaughtException", (error) => {
-	console.error(modules.color("[UNCAUGHT EXCEPTION]", "#EB6112"), modules.color(`${error.message}`, "#E6B0AA"));
-	console.error("Stack:", error.stack);
-	// Jangan crash server untuk error non-fatal
-	// Server hanya akan crash jika benar-benar fatal
-});
-
 const server = new App();
 
 moment.tz.setDefault("Asia/Jakarta").locale("id");

@@ -111,26 +111,7 @@ class ConnectionSession extends SessionDatabase {
       const client = makeWASocket(options);
       sessions = { ...client, isStop: false };
 
-      // Wrap saveCreds dengan error handling untuk prevent crash
-      client.ev.on("creds.update", async () => {
-        try {
-          // Pastikan folder session masih ada sebelum save
-          if (!fs.existsSync(sessionDir)) {
-            console.log(
-              modules.color("[WARN]", "#F39C12"),
-              modules.color(`[${session_name}] Session directory not found, skipping creds save`, "#F39C12")
-            );
-            return;
-          }
-          await saveCreds();
-        } catch (error) {
-          console.error(
-            modules.color("[ERROR]", "#EB6112"),
-            modules.color(`[${session_name}] Failed to save credentials: ${error.message}`, "#E6B0AA")
-          );
-          // Don't crash server, just log the error
-        }
-      });
+      client.ev.on("creds.update", saveCreds);
       client.ev.on("connection.update", async (update) => {
         if (this.count >= 3) {
           this.deleteSession(session_name, { removeFromDB: false });
@@ -242,17 +223,9 @@ class ConnectionSession extends SessionDatabase {
       });
 
       client.ev.on("messages.upsert", async ({ messages, type }) => {
-        try {
-          if (type !== "notify") return;
-          const message = new Message(client, { messages, type }, session_name);
-          await message.mainHandler();
-        } catch (error) {
-          console.error(
-            modules.color("[ERROR]", "#EB6112"),
-            modules.color(`[${session_name}] Error handling message: ${error.message}`, "#E6B0AA")
-          );
-          // Don't crash server, just log the error
-        }
+        if (type !== "notify") return;
+        const message = new Message(client, { messages, type }, session_name);
+        message.mainHandler();
       });
     } catch (error) {
       console.error(
