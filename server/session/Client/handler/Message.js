@@ -14,20 +14,41 @@ export default class Message extends Serialize {
 
     async mainHandler() {
         try {
-            if (!this.msg || this.msg.length === 0) return;
+            console.log("[MESSAGE] mainHandler - START");
+            
+            if (!this.msg || this.msg.length === 0) {
+                console.log("[MESSAGE] mainHandler - No messages");
+                return;
+            }
             
             const message = this.msg[0];
             
             // Skip status broadcast
-            if (message.key && message.key.remoteJid === "status@broadcast") return;
-            if (!message.message) return;
+            if (message.key && message.key.remoteJid === "status@broadcast") {
+                console.log("[MESSAGE] mainHandler - Skipping status broadcast");
+                return;
+            }
+            if (!message.message) {
+                console.log("[MESSAGE] mainHandler - No message content");
+                return;
+            }
+            
+            console.log("[MESSAGE] mainHandler - Processing message");
             
             // Mark as read pertama kali
             await this.markAsRead(message);
             
+            console.log("[MESSAGE] mainHandler - Serializing message");
             const m = await this.serial(this.client, message);
-            N8NService.forwardIncomingMessage(m, this.session);
+            console.log("[MESSAGE] mainHandler - m.from:", m.from);
+            console.log("[MESSAGE] mainHandler - m.fromDisplay:", m.fromDisplay);
+            console.log("[MESSAGE] mainHandler - m.originalJid:", m.originalJid);
+            
+            console.log("[MESSAGE] mainHandler - Forwarding to N8N");
+            await N8NService.forwardIncomingMessage(m, this.session);
+            console.log("[MESSAGE] mainHandler - N8N forward complete");
 
+            console.log("[MESSAGE] mainHandler - Creating bot with JID:", m.from);
             const bot = new Client(this.client, m.from);
             const CMD = m.command ? m.command : null;
             
@@ -36,7 +57,8 @@ export default class Message extends Serialize {
             }
             
         } catch (error) {
-            // Silent - errors are handled gracefully
+            console.error("[MESSAGE] mainHandler - Error:", error.message);
+            console.error("[MESSAGE] mainHandler - Stack:", error.stack);
         }
     }
 

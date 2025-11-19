@@ -23,6 +23,16 @@ export default class Serialize extends Client {
       m.id = msg.key.id;
       m.fromMe = msg.key.fromMe;
       m.from = msg.key.remoteJid;
+      m.originalJid = msg.key.remoteJid; // Simpan JID asli untuk bot operations
+      
+      // Handle @lid format: gunakan senderPn untuk display/webhook
+      if (/@lid/.test(msg.key.remoteJid) && msg.key.senderPn) {
+        // Untuk display/webhook, gunakan senderPn yang readable
+        m.fromDisplay = msg.key.senderPn;
+      } else {
+        m.fromDisplay = msg.key.remoteJid;
+      }
+      
       m.sender = m.fromMe
         ? jidNormalizedUser(client.user.id) || ""
         : isJidGroup(msg.key.remoteJid)
@@ -32,6 +42,9 @@ export default class Serialize extends Client {
         : jidNormalizedUser(msg.key.remoteJid);
       m.isGroupMsg = m.from.endsWith("@g.us");
       m.device = getDevice(m.id);
+      
+      // Resolve phone number dari JID (termasuk @lid format)
+      m.phoneNumber = await this.resolvePhoneNumber(client, m.sender, m.from, m.isGroupMsg, msg.key.senderPn);
     }
     m.botNumber = client.user.id.split(":")[0] + "@s.whatsapp.net";
     m.type = getContentType(msg.message);
@@ -103,16 +116,60 @@ export default class Serialize extends Client {
         m.isMedia.isQuotedLocation = quotedType == "locationMessage";
       }
     }
-    m.isCmd = m.body.startsWith(PREFIX);
+    m.isCmd = m.body ? m.body.startsWith(PREFIX) : false;
     m.command = m.isCmd ? m.body.slice(1).trim().split(/ +/).shift().toLowerCase() : null;
     m.msg = msg;
     m.download = (path = null) => this.downloadMedia(msg.message, path);
     return m;
   }
 
+  async resolvePhoneNumber(client, sender, from, isGroupMsg, senderPn) {
+    try {
+      // Prioritas 1: gunakan senderPn dari Baileys (untuk @lid format)
+      if (senderPn) {
+        // senderPn sudah dalam format @s.whatsapp.net
+        return senderPn.includes("@") ? senderPn.split("@")[0] : senderPn;
+      }
+      
+      // Prioritas 2: untuk group message, gunakan sender (participant)
+      // Untuk direct message, gunakan from
+      const jid = isGroupMsg ? sender : from;
+      
+      // Jika sudah format @s.whatsapp.net, ekstrak langsung
+      if (jid && jid.includes("@s.whatsapp.net")) {
+        return jid.split("@")[0];
+      }
+      
+      // Untuk format @lid atau format lain, coba resolve dengan onWhatsApp
+      if (jid && jid.includes("@")) {
+        try {
+          const result = await client.onWhatsApp(jid);
+          if (result && result.length > 0 && result[0].jid) {
+            // onWhatsApp mengembalikan JID dalam format @s.whatsapp.net
+            const resolvedJid = result[0].jid;
+            if (resolvedJid.includes("@s.whatsapp.net")) {
+              return resolvedJid.split("@")[0];
+            }
+          }
+        } catch (error) {
+          // Jika onWhatsApp gagal, fallback ke ekstraksi biasa
+        }
+      }
+      
+      // Fallback: ekstrak bagian sebelum @
+      return jid ? jid.split("@")[0] : "";
+    } catch (error) {
+      // Jika semua gagal, return sender/from apa adanya
+      return (isGroupMsg ? sender : from).split("@")[0];
+    }
+  }
+
   async downloadMedia(msg, returnType, pathFile) {
     try {
+      console.log("[SERIALIZE] downloadMedia - msg keys:", Object.keys(msg));
       const type = Object.keys(msg)[0];
+      console.log("[SERIALIZE] downloadMedia - detected type:", type);
+      
       const mimeMap = {
         imageMessage: "image",
         videoMessage: "video",
@@ -120,21 +177,35 @@ export default class Serialize extends Client {
         documentMessage: "document",
         audioMessage: "audio",
       };
+      
+      if (!mimeMap[type]) {
+        console.error("[SERIALIZE] downloadMedia - Unknown media type:", type);
+        return null;
+      }
+      
+      console.log("[SERIALIZE] downloadMedia - Starting download for type:", mimeMap[type]);
       const stream = await downloadContentFromMessage(msg[type], mimeMap[type]);
+      
       if (returnType === "stream") {
         return stream;
       }
+      
       let buffer = Buffer.from([]);
       for await (const chunk of stream) {
         buffer = Buffer.concat([buffer, chunk]);
       }
+      
+      console.log("[SERIALIZE] downloadMedia - Downloaded buffer size:", buffer.length);
+      
       if (pathFile) {
         await fs.promises.writeFile(pathFile, buffer);
         return pathFile;
       } else {
         return buffer;
       }
-    } catch {
+    } catch (error) {
+      console.error("[SERIALIZE] downloadMedia - Error:", error.message);
+      console.error("[SERIALIZE] downloadMedia - Stack:", error.stack);
       return null;
     }
   }

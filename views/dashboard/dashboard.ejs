@@ -384,7 +384,7 @@
 </footer>
 
 <script>
-	const socket = io.connect(`<%= process.env.HOST %>`);
+	const socket = io();
 
 	socket.on("connection-status", (event) => {
 		$("#cancelqr").html(`Alert Status!`);

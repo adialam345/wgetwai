@@ -1,4 +1,4 @@
-import WASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import pino from "pino";
 import qrcode from "qrcode";
@@ -72,7 +72,6 @@ class ConnectionSession extends SessionDatabase {
 
   async createSession(session_name) {
     const sessionDir = `${this.sessionPath}/${session_name}`;
-    const storePath = `${this.sessionPath}/store/${session_name}.json`;
     
     // Pastikan folder session dibuat sebelum useMultiFileAuthState
     if (!fs.existsSync(sessionDir)) {
@@ -109,19 +108,29 @@ class ConnectionSession extends SessionDatabase {
         version,
       };
 
-      const store = makeInMemoryStore({});
-      store.readFromFile(storePath);
-
-      const client = WASocket.default(options);
-
-      store.readFromFile(storePath);
-      setInterval(() => {
-        store.writeToFile(storePath);
-      }, 10_000);
-      store.bind(client.ev);
+      const client = makeWASocket(options);
       sessions = { ...client, isStop: false };
 
-      client.ev.on("creds.update", saveCreds);
+      // Wrap saveCreds dengan error handling untuk prevent crash
+      client.ev.on("creds.update", async () => {
+        try {
+          // Pastikan folder session masih ada sebelum save
+          if (!fs.existsSync(sessionDir)) {
+            console.log(
+              modules.color("[WARN]", "#F39C12"),
+              modules.color(`[${session_name}] Session directory not found, skipping creds save`, "#F39C12")
+            );
+            return;
+          }
+          await saveCreds();
+        } catch (error) {
+          console.error(
+            modules.color("[ERROR]", "#EB6112"),
+            modules.color(`[${session_name}] Failed to save credentials: ${error.message}`, "#E6B0AA")
+          );
+          // Don't crash server, just log the error
+        }
+      });
       client.ev.on("connection.update", async (update) => {
         if (this.count >= 3) {
           this.deleteSession(session_name, { removeFromDB: false });
@@ -138,23 +147,28 @@ class ConnectionSession extends SessionDatabase {
 
         if (update.isNewLogin) {
           this.count = 0;
-          await this.createSessionDB(session_name, client.authState.creds.me.id.split(":")[0]);
-          let files = `${this.logPath}/${session_name}.txt`;
-          // Make sure log directory exists (in case environment changed after constructor)
-          if (!fs.existsSync(this.logPath)) {
-            fs.mkdirSync(this.logPath, { recursive: true });
+          // In Baileys 6.7.7, user info is available via client.user.id after login
+          const userId = client.user?.id || state.creds.me?.id || "";
+          const phoneNumber = userId ? userId.split(":")[0] : "";
+          if (phoneNumber) {
+            await this.createSessionDB(session_name, phoneNumber);
+            let files = `${this.logPath}/${session_name}.txt`;
+            // Make sure log directory exists (in case environment changed after constructor)
+            if (!fs.existsSync(this.logPath)) {
+              fs.mkdirSync(this.logPath, { recursive: true });
+            }
+            if (!fs.existsSync(files)) {
+              fs.writeFileSync(files, `Success Create new Session : ${session_name}, ${phoneNumber}\n`);
+            }
+            const readLog = fs.readFileSync(files, "utf8");
+            return socket.emit("logger", {
+              session_name,
+              result: readLog,
+              files,
+              session_number: phoneNumber,
+              status: "CONNECTED",
+            });
           }
-          if (!fs.existsSync(files)) {
-            fs.writeFileSync(files, `Success Create new Session : ${session_name}, ${client.authState.creds.me.id.split(":")[0]}\n`);
-          }
-          const readLog = fs.readFileSync(files, "utf8");
-          return socket.emit("logger", {
-            session_name,
-            result: readLog,
-            files,
-            session_number: client.authState.creds.me.id.split(":")[0],
-            status: "CONNECTED",
-          });
         }
 
         const { lastDisconnect, connection } = update;
@@ -228,9 +242,17 @@ class ConnectionSession extends SessionDatabase {
       });
 
       client.ev.on("messages.upsert", async ({ messages, type }) => {
-        if (type !== "notify") return;
-        const message = new Message(client, { messages, type }, session_name);
-        message.mainHandler();
+        try {
+          if (type !== "notify") return;
+          const message = new Message(client, { messages, type }, session_name);
+          await message.mainHandler();
+        } catch (error) {
+          console.error(
+            modules.color("[ERROR]", "#EB6112"),
+            modules.color(`[${session_name}] Error handling message: ${error.message}`, "#E6B0AA")
+          );
+          // Don't crash server, just log the error
+        }
       });
     } catch (error) {
       console.error(

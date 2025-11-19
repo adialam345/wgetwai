@@ -1,8 +1,13 @@
-import pkg, { downloadContentFromMessage, toBuffer } from "@whiskeysockets/baileys";
+import { 
+  downloadContentFromMessage, 
+  toBuffer,
+  generateThumbnail,
+  generateWAMessageFromContent,
+  prepareWAMessageMedia,
+  proto
+} from "@whiskeysockets/baileys";
 import axios from "axios";
 import fs from "fs";
-
-const { generateThumbnail, generateWAMessageFromContent, prepareWAMessageMedia, proto } = pkg;
 
 class Client {
   constructor(client, target) {
@@ -11,13 +16,21 @@ class Client {
   }
 
   async sendText(text) {
+    console.log("[CLIENT] sendText - Sending to JID:", this.from);
+    console.log("[CLIENT] sendText - Message:", text.substring(0, 50));
     const mentions = [...text.matchAll(/@(\d{0,16})/g)].map((v) => v[1] + "@s.whatsapp.net");
-    return await this.client.sendMessage(this.from, { text, mentions });
+    const result = await this.client.sendMessage(this.from, { text, mentions });
+    console.log("[CLIENT] sendText - Message sent successfully");
+    return result;
   }
 
   async reply(text, quoted) {
+    console.log("[CLIENT] reply - Replying to JID:", this.from);
+    console.log("[CLIENT] reply - Message:", text.substring(0, 50));
     const mentions = [...text.matchAll(/@(\d{0,16})/g)].map((v) => v[1] + "@s.whatsapp.net");
-    return await this.client.sendMessage(this.from, { text, mentions }, { quoted });
+    const result = await this.client.sendMessage(this.from, { text, mentions }, { quoted });
+    console.log("[CLIENT] reply - Reply sent successfully");
+    return result;
   }
 
   async sendProduct(path, body = "", footer = "", businessOwnerJid = "0", options = {}) {
