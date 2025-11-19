@@ -23,11 +23,14 @@ export default class Serialize extends Client {
       m.id = msg.key.id;
       m.fromMe = msg.key.fromMe;
       m.from = msg.key.remoteJid;
+      m.originalJid = msg.key.remoteJid; // Simpan JID asli untuk bot operations
       
-      // Handle @lid format dengan senderPn dari Baileys terbaru
+      // Handle @lid format: gunakan senderPn untuk display/webhook
       if (/@lid/.test(msg.key.remoteJid) && msg.key.senderPn) {
-        msg.key.remoteJid = msg.key.senderPn;
-        m.from = msg.key.senderPn;
+        // Untuk display/webhook, gunakan senderPn yang readable
+        m.fromDisplay = msg.key.senderPn;
+      } else {
+        m.fromDisplay = msg.key.remoteJid;
       }
       
       m.sender = m.fromMe
