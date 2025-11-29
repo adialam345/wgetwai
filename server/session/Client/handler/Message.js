@@ -49,7 +49,7 @@ export default class Message extends Serialize {
             console.log("[MESSAGE] mainHandler - N8N forward complete");
 
             console.log("[MESSAGE] mainHandler - Creating bot with JID:", m.from);
-            const bot = new Client(this.client, m.from);
+            const bot = new Client(this.client, m.from, this.session);
             const CMD = m.command ? m.command : null;
             
             if (!CMD) {

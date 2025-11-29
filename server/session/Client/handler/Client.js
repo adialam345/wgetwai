@@ -8,11 +8,30 @@ import {
 } from "@whiskeysockets/baileys";
 import axios from "axios";
 import fs from "fs";
+import MessageDatabase from "../../../database/db/message.db.js";
 
 class Client {
-  constructor(client, target) {
+  constructor(client, target, session_name = null) {
     this.client = client;
     this.from = target;
+    this.session_name = session_name;
+    this.messageDB = session_name ? new MessageDatabase() : null;
+  }
+
+  async storeMessage(result) {
+    if (!this.messageDB || !this.session_name || !result?.key) return;
+    try {
+      await this.messageDB.storeMessage(
+        this.session_name,
+        result.key.id,
+        result.key.remoteJid || this.from,
+        result.key.fromMe || true,
+        result.message || {}
+      );
+    } catch (error) {
+      // Silent error - don't break message flow
+      console.error(`[CLIENT] Error storing message:`, error.message);
+    }
   }
 
   async sendText(text) {
@@ -20,6 +39,7 @@ class Client {
     console.log("[CLIENT] sendText - Message:", text.substring(0, 50));
     const mentions = [...text.matchAll(/@(\d{0,16})/g)].map((v) => v[1] + "@s.whatsapp.net");
     const result = await this.client.sendMessage(this.from, { text, mentions });
+    await this.storeMessage(result);
     console.log("[CLIENT] sendText - Message sent successfully");
     return result;
   }
@@ -29,6 +49,7 @@ class Client {
     console.log("[CLIENT] reply - Message:", text.substring(0, 50));
     const mentions = [...text.matchAll(/@(\d{0,16})/g)].map((v) => v[1] + "@s.whatsapp.net");
     const result = await this.client.sendMessage(this.from, { text, mentions }, { quoted });
+    await this.storeMessage(result);
     console.log("[CLIENT] reply - Reply sent successfully");
     return result;
   }
@@ -61,10 +82,16 @@ class Client {
       { userJid: this.from }
     );
     await this.client.relayMessage(this.from, catalog.message, { messageId: catalog.key.id });
+    // Store relayed message
+    if (catalog.message && catalog.key) {
+      await this.storeMessage({ key: catalog.key, message: catalog.message });
+    }
   }
 
   async sendLocation(lat, long) {
-    return await this.client.sendMessage(this.from, { location: { degreesLatitude: lat, degreesLongitude: long } });
+    const result = await this.client.sendMessage(this.from, { location: { degreesLatitude: lat, degreesLongitude: long } });
+    await this.storeMessage(result);
+    return result;
   }
 
   async sendContact(listNumber = [], listName = []) {
@@ -85,7 +112,9 @@ class Client {
           "END:VCARD",
       });
     }
-    return await this.client.sendMessage(this.from, { contacts: { displayName: listName[0], contacts: list } });
+    const result = await this.client.sendMessage(this.from, { contacts: { displayName: listName[0], contacts: list } });
+    await this.storeMessage(result);
+    return result;
   }
 
   async sendSticker(api = false, mime, file, pack, author, keepScale = true, circle = false, removebg = false, quoted = false) {
@@ -106,8 +135,9 @@ class Client {
           removebg,
         },
       };
-      sticker.post("/prepareWebp", data).then((res) => {
-        this.client.sendMessage(this.from, { sticker: Buffer.from(res.data.webpBase64, "base64") }, { quoted });
+      sticker.post("/prepareWebp", data).then(async (res) => {
+        const result = await this.client.sendMessage(this.from, { sticker: Buffer.from(res.data.webpBase64, "base64") }, { quoted });
+        await this.storeMessage(result);
       });
       if (api) fs.unlinkSync(file);
     } else if (mime == "video") {
@@ -126,8 +156,9 @@ class Client {
           loop: 0,
         },
       };
-      sticker.post("/convertMp4BufferToWebpDataUrl", data).then((data) => {
-        this.client.sendMessage(this.from, { sticker: Buffer.from(data.data.split(";base64,")[1], "base64") }, { quoted });
+      sticker.post("/convertMp4BufferToWebpDataUrl", data).then(async (data) => {
+        const result = await this.client.sendMessage(this.from, { sticker: Buffer.from(data.data.split(";base64,")[1], "base64") }, { quoted });
+        await this.storeMessage(result);
       });
       if (api) fs.unlinkSync(file);
     }
@@ -146,6 +177,10 @@ class Client {
       let msgType = mime == "image" ? { imageMessage: message.imageMessage } : { videoMessage: message.videoMessage };
       let media = await generateWAMessageFromContent(this.from, msgType, { quoted, mediaUploadTimeoutMs: 600000 });
       await this.client.relayMessage(this.from, media.message, { messageId: media.key.id }).catch((error) => console.log(error));
+      // Store relayed message
+      if (media.message && media.key) {
+        await this.storeMessage({ key: media.key, message: media.message });
+      }
     } else if (mime == "audio") {
       const message = await prepareWAMessageMedia(
         { audio: { url: path }, mimetype: options.file.mimetype, fileName: options.file.name },
@@ -153,7 +188,12 @@ class Client {
       );
       let media = await generateWAMessageFromContent(this.from, { audioMessage: message.audioMessage }, { quoted, mediaUploadTimeoutMs: 600000 });
       await this.client.relayMessage(this.from, media.message, { messageId: media.key.id }).catch((error) => console.log(error));
-      await this.client.sendMessage(this.from, { text: caption });
+      // Store relayed message
+      if (media.message && media.key) {
+        await this.storeMessage({ key: media.key, message: media.message });
+      }
+      const captionResult = await this.client.sendMessage(this.from, { text: caption });
+      await this.storeMessage(captionResult);
     } else {
       const message = await prepareWAMessageMedia(
         { document: { url: path }, mimetype: options.file.mimetype, fileName: options.file.name },
@@ -165,8 +205,13 @@ class Client {
         { quoted, mediaUploadTimeoutMs: 600000 }
       );
       await this.client.relayMessage(this.from, media.message, { messageId: media.key.id }).catch((error) => console.log(error));
+      // Store relayed message
+      if (media.message && media.key) {
+        await this.storeMessage({ key: media.key, message: media.message });
+      }
       if (caption != "") {
-        await this.client.sendMessage(this.from, { text: caption });
+        const captionResult = await this.client.sendMessage(this.from, { text: caption });
+        await this.storeMessage(captionResult);
       }
     }
   }
@@ -179,7 +224,9 @@ class Client {
       buttonText,
       sections,
     };
-    return await this.client.sendMessage(this.from, listMessage);
+    const result = await this.client.sendMessage(this.from, listMessage);
+    await this.storeMessage(result);
+    return result;
   }
 
   async sendButton(text = "", footer = "", button = [], path = "", mimetype = "", options = {}) {
@@ -206,6 +253,10 @@ class Client {
         { mediaUploadTimeoutMs: 600000 }
       );
       await this.client.relayMessage(this.from, media.message, { messageId: media.key.id }).catch((error) => console.log(error));
+      // Store relayed message
+      if (media.message && media.key) {
+        await this.storeMessage({ key: media.key, message: media.message });
+      }
       fs.unlinkSync(path);
     } else {
       const buttonMessage = {
@@ -216,7 +267,9 @@ class Client {
         mentions,
         viewOnce: true, // Sementara
       };
-      return await this.client.sendMessage(this.from, buttonMessage);
+      const result = await this.client.sendMessage(this.from, buttonMessage);
+      await this.storeMessage(result);
+      return result;
     }
   }
 

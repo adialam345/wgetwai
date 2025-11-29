@@ -24,7 +24,7 @@ class ControllerApi extends ConnectionSession {
 			sessions = sessions.includes("(") ? sessions.split(" (")[0] : sessions;
 			const { client, toTarget } = await this.clientValidator(req, res, sessions, target);
 			if (!client || !toTarget) return;
-			await new Client(client, toTarget).sendText(message);
+			await new Client(client, toTarget, sessions).sendText(message);
 			await this.history.pushNewMessage(sessions, "TEXT", toTarget, message);
 			return res.send({ status: 200, message: `Success Send Message to ${target}!` });
 		} catch (error) {
@@ -128,7 +128,7 @@ class ControllerApi extends ConnectionSession {
 			sessions = sessions.includes("(") ? sessions.split(" (")[0] : sessions;
 			const { client, toTarget } = await this.clientValidator(req, res, sessions, target);
 			if (!client || !toTarget) return;
-			await new Client(client, toTarget).sendLocation(lat, long);
+			await new Client(client, toTarget, sessions).sendLocation(lat, long);
 			await this.history.pushNewMessage(sessions, "LOCATION", toTarget, `Long : ${long} - Lat : ${lat}`);
 			return res.send({ status: 200, message: `Success Send Message to ${target}!` });
 		} catch (error) {
@@ -152,7 +152,7 @@ class ControllerApi extends ConnectionSession {
 				const file = req.files.file;
 				const dest = `./public/temp/${nameRandom}${path.extname(file.name)}`;
 				await file.mv(dest);
-				await new Client(client, toTarget).sendMedia(dest, text, { file });
+				await new Client(client, toTarget, sessions).sendMedia(dest, text, { file });
 				await this.history.pushNewMessage(sessions, "MEDIA", toTarget, `File : ${file.name}, Caption : ${text}`);
 				res.send({ status: 200, message: `Success Send Message to ${target}!` });
 				return await modules.sleep(3000).then(fs.unlinkSync(dest));
@@ -162,7 +162,7 @@ class ControllerApi extends ConnectionSession {
 					const dest = `./public/temp/${nameRandom}`;
 					fs.writeFileSync(dest, buffer.data);
 					var opts = { file: { name: nameRandom, mimetype: buffer.headers["content-type"] } };
-					await new Client(client, toTarget).sendMedia(dest, text, opts);
+					await new Client(client, toTarget, sessions).sendMedia(dest, text, opts);
 					await this.history.pushNewMessage(sessions, "MEDIA", toTarget, `File : ${url}, Caption : ${text}`);
 					res.send({ status: 200, message: `Success Send Message to ${target}!` });
 					return await modules.sleep(3000).then(fs.unlinkSync(dest));
@@ -192,7 +192,7 @@ class ControllerApi extends ConnectionSession {
 				const file = req.files.file;
 				const dest = `./public/temp/${nameRandom}${path.extname(file.name)}`;
 				await file.mv(dest);
-				await new Client(client, toTarget).sendSticker(true, file.mimetype.split("/")[0], dest, packname, author, true);
+				await new Client(client, toTarget, sessions).sendSticker(true, file.mimetype.split("/")[0], dest, packname, author, true);
 				await this.history.pushNewMessage(sessions, "STICKER", toTarget, file.name);
 				return res.send({ status: 200, message: `Success Send Message to ${target}!` });
 			} else if (url && (!req.files || Object.keys(req.files).length === 0)) {
@@ -200,7 +200,7 @@ class ControllerApi extends ConnectionSession {
 					const buffer = await helpers.downloadAxios(url);
 					const dest = `./public/temp/${nameRandom}`;
 					fs.writeFileSync(dest, buffer.data);
-					await new Client(client, toTarget).sendSticker(true, buffer.headers["content-type"].split("/")[0], dest, packname, author, true);
+					await new Client(client, toTarget, sessions).sendSticker(true, buffer.headers["content-type"].split("/")[0], dest, packname, author, true);
 					await this.history.pushNewMessage(sessions, "STICKER", toTarget, url);
 					return res.send({ status: 200, message: `Success Send Message to ${target}!` });
 				} else {
@@ -230,7 +230,7 @@ class ControllerApi extends ConnectionSession {
 				const dest = `./public/temp/${nameRandom}${path.extname(file.name)}`;
 				await file.mv(dest);
 				var opts = { title, currencyCode: currency, price, salePrice };
-				await new Client(client, toTarget).sendProduct(dest, message, footer, owner, opts);
+				await new Client(client, toTarget, sessions).sendProduct(dest, message, footer, owner, opts);
 				await this.history.pushNewMessage(sessions, "PRODUCT", toTarget, `${title}, ${price} - ${salePrice}`);
 				res.send({ status: 200, message: `Success Send Message to ${target}!` });
 				return await modules.sleep(3000).then(fs.unlinkSync(dest));
@@ -240,7 +240,7 @@ class ControllerApi extends ConnectionSession {
 					const dest = `./public/temp/${nameRandom}`;
 					fs.writeFileSync(dest, buffer.data);
 					var opts = { title, currencyCode: currency, price, salePrice };
-					await new Client(client, toTarget).sendProduct(dest, message, footer, owner, opts);
+					await new Client(client, toTarget, sessions).sendProduct(dest, message, footer, owner, opts);
 					await this.history.pushNewMessage(sessions, "PRODUCT", toTarget, `${title}, ${price} - ${salePrice}`);
 					res.send({ status: 200, message: `Success Send Message to ${target}!` });
 					return await modules.sleep(3000).then(fs.unlinkSync(dest));
@@ -297,7 +297,7 @@ class ControllerApi extends ConnectionSession {
 			if (stats) {
 				return res.send({ status: 403, message: `The Number (${stats}) is not Registered on WhatsApp` });
 			} else {
-				await new Client(client, toTarget).sendContact(listNumber, listName);
+				await new Client(client, toTarget, sessions).sendContact(listNumber, listName);
 				await this.history.pushNewMessage(sessions, "CONTACT", toTarget, `${contact} - ${contactName}, ${anotherContact}`);
 				return res.send({ status: 200, message: `Success Send Message to ${target}!` });
 			}
@@ -364,11 +364,11 @@ class ControllerApi extends ConnectionSession {
 			await new ButtonResponse().createButtonResponse(sessions, toTarget, randomId, buttDb, btnMessage);
 
 			if (isFile == 1) {
-				await new Client(client, toTarget).sendButton(text, footer, buttons, dest, file.mimetype);
+				await new Client(client, toTarget, sessions).sendButton(text, footer, buttons, dest, file.mimetype);
 			} else if (isFile == 2) {
-				await new Client(client, toTarget).sendButton(text, footer, buttons, dest, buffer.headers["content-type"]);
+				await new Client(client, toTarget, sessions).sendButton(text, footer, buttons, dest, buffer.headers["content-type"]);
 			} else {
-				await new Client(client, toTarget).sendButton(text, footer, buttons);
+				await new Client(client, toTarget, sessions).sendButton(text, footer, buttons);
 			}
 			await this.history.pushNewMessage(sessions, "BUTTON", toTarget, message);
 			return res.send({ status: 200, message: `Success Send Message to ${target}!` });
@@ -400,7 +400,7 @@ class ControllerApi extends ConnectionSession {
 				return `${value}${randomId}`;
 			});
 			await new ListResponse().createListResponse(sessions, toTarget, randomId, listDb, respRow);
-			await new Client(client, toTarget).sendList(body, footer, title, button, sections);
+			await new Client(client, toTarget, sessions).sendList(body, footer, title, button, sections);
 			await this.history.pushNewMessage(sessions, "LIST", toTarget, title);
 			return res.send({ status: 200, message: `Success Send Message to ${target}!` });
 		} catch (error) {

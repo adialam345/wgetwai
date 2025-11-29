@@ -1,4 +1,4 @@
-import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
+import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState, isJidBroadcast, isJidStatusBroadcast } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import pino from "pino";
 import qrcode from "qrcode";
@@ -7,6 +7,7 @@ import { modules } from "../../lib/index.js";
 import { socket, moment } from "../config/index.js";
 import SessionDatabase from "../database/db/session.db.js";
 import Message from "./Client/handler/Message.js";
+import MessageDatabase from "../database/db/message.db.js";
 
 const { SESSION_PATH, LOG_PATH } = process.env;
 let sessions = {};
@@ -99,6 +100,7 @@ class ConnectionSession extends SessionDatabase {
     try {
       let { state, saveCreds } = await useMultiFileAuthState(sessionDir);
       const { version, isLatest } = await fetchLatestBaileysVersion();
+      const messageDB = new MessageDatabase();
 
       const options = {
         printQRInTerminal: false,
@@ -106,6 +108,16 @@ class ConnectionSession extends SessionDatabase {
         logger: pino({ level: "silent" }),
         browser: Browsers.macOS("Safari"),
         version,
+        shouldIgnoreJid: (jid) => isJidBroadcast(jid) || isJidStatusBroadcast(jid),
+        getMessage: async (key) => {
+          try {
+            const message = await messageDB.getMessage(session_name, key.id);
+            return message;
+          } catch (error) {
+            console.error(`[SESSION] Error retrieving message ${key.id}:`, error.message);
+            return undefined;
+          }
+        },
       };
 
       const client = makeWASocket(options);
@@ -226,6 +238,27 @@ class ConnectionSession extends SessionDatabase {
         if (type !== "notify") return;
         const message = new Message(client, { messages, type }, session_name);
         message.mainHandler();
+      });
+
+      // Store sent messages for getMessage retrieval (fixes "Waiting for message" issue)
+      client.ev.on("messages.upsert", async ({ messages, type }) => {
+        try {
+          for (const msg of messages) {
+            // Only store messages we sent (fromMe: true)
+            if (msg.key?.fromMe && msg.key?.id && msg.message) {
+              await messageDB.storeMessage(
+                session_name,
+                msg.key.id,
+                msg.key.remoteJid || "",
+                true,
+                msg.message
+              );
+            }
+          }
+        } catch (error) {
+          // Silent error - don't break message flow
+          console.error(`[SESSION] Error storing sent message:`, error.message);
+        }
       });
     } catch (error) {
       console.error(
