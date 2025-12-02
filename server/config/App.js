@@ -23,7 +23,7 @@ class App {
 		this.app.set("trust proxy", 1);
 		this.app.set("view engine", "ejs");
 		this.app.use(expressLayout);
-		this.app.use(express.static("public/mazer"));
+
 		this.app.use(express.static("public"));
 		this.app.use(express.urlencoded({ extended: true }));
 		this.app.use(express.json());

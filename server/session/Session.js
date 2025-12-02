@@ -1,4 +1,4 @@
-import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState, isJidBroadcast, isJidStatusBroadcast } from "@whiskeysockets/baileys";
+import makeWASocket, { Browsers, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import pino from "pino";
 import qrcode from "qrcode";
@@ -7,10 +7,9 @@ import { modules } from "../../lib/index.js";
 import { socket, moment } from "../config/index.js";
 import SessionDatabase from "../database/db/session.db.js";
 import Message from "./Client/handler/Message.js";
-import MessageDatabase from "../database/db/message.db.js";
 
 const { SESSION_PATH, LOG_PATH } = process.env;
-let sessions = {};
+let sessions = {}; // Changed to object map for multi-session support
 
 class ConnectionSession extends SessionDatabase {
   constructor() {
@@ -32,8 +31,9 @@ class ConnectionSession extends SessionDatabase {
     }
   }
 
-  getClient() {
-    return sessions ?? null;
+  getClient(session_name) {
+    // Return specific session if name provided, otherwise return empty object
+    return session_name ? (sessions[session_name] || null) : sessions;
   }
 
   async deleteSession(session_name, options = {}) {
@@ -46,13 +46,13 @@ class ConnectionSession extends SessionDatabase {
     } else {
       await this.updateStatusSessionDB(session_name, "STOPPED");
     }
-    sessions = {};
+    delete sessions[session_name];
   }
 
   async generateQr(input, session_name) {
     let rawData = await qrcode.toDataURL(input, { scale: 8 });
     let dataBase64 = rawData.replace(/^data:image\/png;base64,/, "");
-    await modules.sleep(3000);
+    // Removed delay as per request
     socket.emit(`update-qr`, { buffer: dataBase64, session_name });
     this.count++;
     console.log(
@@ -73,7 +73,7 @@ class ConnectionSession extends SessionDatabase {
 
   async createSession(session_name) {
     const sessionDir = `${this.sessionPath}/${session_name}`;
-    
+
     // Pastikan folder session dibuat sebelum useMultiFileAuthState
     if (!fs.existsSync(sessionDir)) {
       try {
@@ -86,7 +86,7 @@ class ConnectionSession extends SessionDatabase {
         throw err;
       }
     }
-    
+
     // Pastikan store directory juga ada
     const storeDir = `${this.sessionPath}/store`;
     if (!fs.existsSync(storeDir)) {
@@ -96,32 +96,22 @@ class ConnectionSession extends SessionDatabase {
         // Silent - will retry if needed
       }
     }
-    
+
     try {
       let { state, saveCreds } = await useMultiFileAuthState(sessionDir);
       const { version, isLatest } = await fetchLatestBaileysVersion();
-      const messageDB = new MessageDatabase();
 
       const options = {
         printQRInTerminal: false,
         auth: state,
-        logger: pino({ level: "silent" }),
-        browser: Browsers.macOS("Safari"),
+        logger: pino({ level: "silent" }), // Reduce noise
+        browser: ["Ubuntu", "Chrome", "20.0.04"], // Use stable browser signature
         version,
-        shouldIgnoreJid: (jid) => isJidBroadcast(jid) || isJidStatusBroadcast(jid),
-        getMessage: async (key) => {
-          try {
-            const message = await messageDB.getMessage(session_name, key.id);
-            return message;
-          } catch (error) {
-            console.error(`[SESSION] Error retrieving message ${key.id}:`, error.message);
-            return undefined;
-          }
-        },
       };
 
       const client = makeWASocket(options);
-      sessions = { ...client, isStop: false };
+      client.isStop = false;
+      sessions[session_name] = client;
 
       client.ev.on("creds.update", saveCreds);
       client.ev.on("connection.update", async (update) => {
@@ -176,11 +166,11 @@ class ConnectionSession extends SessionDatabase {
             this.safeLogout(client);
             return socket.emit("connection-status", { session_name, result: "Bad Session File, Please Create QR Again" });
           } else if (reason === DisconnectReason.connectionClosed) {
-            const checked = this.getClient();
-            if (checked.isStop == false) {
+            const checked = this.getClient(session_name);
+            if (checked && checked.isStop == false) {
               // Auto-reconnect - no need to log
               this.createSession(session_name);
-            } else if (checked.isStop == true) {
+            } else {
               await this.updateStatusSessionDB(session_name, "STOPPED");
               console.log(
                 modules.color("[STOP]", "#EB6112"),
@@ -221,6 +211,7 @@ class ConnectionSession extends SessionDatabase {
               modules.color("[WARN]", "#EB6112"),
               modules.color(`[${session_name}] Unknown disconnect reason: ${reason}`, "#E6B0AA")
             );
+            console.error("Disconnect Error Details:", lastDisconnect.error);
             client.end(`Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`);
           }
         } else if (connection == "open") {
@@ -238,27 +229,6 @@ class ConnectionSession extends SessionDatabase {
         if (type !== "notify") return;
         const message = new Message(client, { messages, type }, session_name);
         message.mainHandler();
-      });
-
-      // Store sent messages for getMessage retrieval (fixes "Waiting for message" issue)
-      client.ev.on("messages.upsert", async ({ messages, type }) => {
-        try {
-          for (const msg of messages) {
-            // Only store messages we sent (fromMe: true)
-            if (msg.key?.fromMe && msg.key?.id && msg.message) {
-              await messageDB.storeMessage(
-                session_name,
-                msg.key.id,
-                msg.key.remoteJid || "",
-                true,
-                msg.message
-              );
-            }
-          }
-        } catch (error) {
-          // Silent error - don't break message flow
-          console.error(`[SESSION] Error storing sent message:`, error.message);
-        }
       });
     } catch (error) {
       console.error(

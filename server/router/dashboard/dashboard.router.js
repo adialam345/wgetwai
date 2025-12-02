@@ -12,19 +12,29 @@ const db = new SessionDatabase();
 const callbackDb = new CallbackDatabase();
 
 router.get("/", async (req, res) => {
-	const entries = fs.existsSync(SESSION_PATH)
-		? fs.readdirSync(SESSION_PATH, { withFileTypes: true }).filter((entry) => entry.isDirectory() && entry.name !== "store")
-		: [];
-	const session_name = entries.length ? entries[0].name : null;
-	const loggerPath =
-		session_name && fs.existsSync(`${LOG_PATH}/${session_name}.txt`) ? `${LOG_PATH.replace("./public/", "")}/${session_name}.txt` : null;
-	const session = session_name ? await db.findOneSessionDB(session_name) : null;
-	const callbackSetting = session_name ? await callbackDb.getCallback(session_name) : null;
+	let sessions = await db.findAllSessionDB() || [];
+
+	// Scan for physical session folders
+	if (fs.existsSync(SESSION_PATH)) {
+		const files = fs.readdirSync(SESSION_PATH, { withFileTypes: true });
+		const folders = files.filter(dirent => dirent.isDirectory() && dirent.name !== 'store').map(dirent => dirent.name);
+
+		// Find folders that are not in the DB
+		const dbSessionNames = sessions.map(s => s.session_name);
+		const orphanedSessions = folders.filter(folder => !dbSessionNames.includes(folder));
+
+		// Add orphaned sessions to the list
+		orphanedSessions.forEach(name => {
+			sessions.push({
+				session_name: name,
+				session_number: 'Not in DB',
+				status: 'STOPPED' // Assume stopped if not in DB
+			});
+		});
+	}
+
 	res.render("dashboard/dashboard", {
-		loggerPath,
-		session,
-		session_name,
-		callbackSetting,
+		sessions,
 		layout: "layouts/main",
 	});
 });

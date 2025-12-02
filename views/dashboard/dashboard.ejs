@@ -1,613 +1,432 @@
-<style>
-	.dashboard-hero {
-		background: linear-gradient(120deg, #505a82, #1b9aaa, #6dd5ed);
-		color: #fff;
-		border: none;
-		border-radius: 26px;
-		box-shadow: 0 10px 35px rgba(17, 24, 39, 0.35);
-		overflow: hidden;
-	}
-	.dashboard-hero .badge {
-		background: rgba(255, 255, 255, 0.2);
-		backdrop-filter: blur(6px);
-		border-radius: 999px;
-		padding: 0.25rem 0.9rem;
-		font-weight: 600;
-	}
-	.metric-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.4rem 0.9rem;
-		background: rgba(255, 255, 255, 0.15);
-		border-radius: 999px;
-		font-size: 0.85rem;
-		font-weight: 600;
-	}
-	.card.glass-card {
-		border-radius: 18px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-	}
-	.card h4 {
-		font-weight: 600;
-	}
-	.divider-text {
-		font-weight: 600;
-		letter-spacing: 0.08rem;
-	}
-	#socket-qr {
-		min-height: 260px;
-	}
-	#logger .scroll {
-		border-radius: 16px;
-	}
-	.quick-links a {
-		width: 100%;
-	}
-	.log-terminal {
-		background: #0d1117;
-		border-radius: 12px;
-		padding: 1.25rem;
-		font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-		font-size: 0.875rem;
-		color: #c9d1d9;
-		max-height: 400px;
-		overflow-y: auto;
-		overflow-x: auto;
-		line-height: 1.6;
-	}
-	.log-terminal::-webkit-scrollbar {
-		width: 8px;
-		height: 8px;
-	}
-	.log-terminal::-webkit-scrollbar-track {
-		background: #161b22;
-		border-radius: 4px;
-	}
-	.log-terminal::-webkit-scrollbar-thumb {
-		background: #30363d;
-		border-radius: 4px;
-	}
-	.log-terminal::-webkit-scrollbar-thumb:hover {
-		background: #484f58;
-	}
-	.log-line {
-		margin: 0.25rem 0;
-		padding: 0.25rem 0;
-		border-left: 3px solid transparent;
-		padding-left: 0.75rem;
-	}
-	.log-line:hover {
-		background: rgba(255, 255, 255, 0.05);
-		border-left-color: #58a6ff;
-	}
-	.session-card {
-		background: transparent;
-		border-radius: 16px;
-		padding: 1.5rem;
-	}
-	.session-info-item {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		background: rgba(0, 0, 0, 0.02);
-		border-radius: 10px;
-		margin-bottom: 0.75rem;
-		border: 1px solid rgba(0, 0, 0, 0.05);
-		transition: all 0.2s ease;
-	}
-	.session-info-item:hover {
-		background: rgba(0, 0, 0, 0.04);
-		border-color: rgba(0, 0, 0, 0.1);
-	}
-	.session-info-item i {
-		font-size: 1.25rem;
-		width: 24px;
-		text-align: center;
-		color: #bcc8d3;
-	}
-	.session-info-item .small {
-		color: #e5edf3;
-		font-size: 0.75rem;
-		font-weight: 500;
-	}
-	.session-info-item .fw-bold {
-		color: #a6a7a9;
-		font-weight: 600;
-		font-size: 0.95rem;
-	}
-	.session-card {
-		color: #212529;
-	}
-	.status-badge-modern {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		border-radius: 8px;
-		font-weight: 600;
-		font-size: 0.875rem;
-	}
-	.status-badge-modern.connected {
-		background: rgba(34, 197, 94, 0.2);
-		color: #22c55e;
-		border: 1px solid rgba(34, 197, 94, 0.3);
-	}
-	.status-badge-modern.stopped {
-		background: rgba(234, 179, 8, 0.2);
-		color: #eab308;
-		border: 1px solid rgba(234, 179, 8, 0.3);
-	}
-</style>
-<div class="page-heading d-flex flex-wrap justify-content-between align-items-center gap-2">
+<div class="d-flex justify-content-between align-items-end mb-5">
 	<div>
-		<h3 class="mb-1">Control Center</h3>
-		<p class="text-muted mb-0">Kelola sesi WhatsApp Gateway, webhook, dan otomatisasi.</p>
+		<h2 class="fw-bold mb-2 text-dark">Dashboard</h2>
+		<p class="text-muted mb-0">Manage your WhatsApp sessions and connectivity.</p>
 	</div>
-	<div class="metric-pill text-white bg-primary">
-		<i class="fa-solid fa-circle-dot"></i> <span>Gateway Online</span>
-	</div>
-</div>
-<div class="page-content">
-	<%- include('../layouts/alert') %>
-	<section class="row g-4">
-		<div class="col-12">
-			<div class="card dashboard-hero p-4">
-				<div class="row align-items-center">
-					<div class="col-lg-8 col-12">
-						<p class="badge mb-3 text-uppercase">WhatsApp Gateway</p>
-						<h2 class="fw-bold">WhatsApp Gateway Console</h2>
-						<p class="mb-4">Pantau status sesi, kirim pesan, dan sambungkan callback ke n8n melalui satu panel yang bersih dan modern.</p>
-						<div class="d-flex flex-wrap gap-2">
-							<div class="metric-pill">
-								<i class="fa-solid fa-signal"></i>
-								<span><%= session ? session.status : 'No session' %></span>
-							</div>
-							<div class="metric-pill">
-								<i class="fa-solid fa-qrcode"></i>
-								<span><%= session ? session.session_name : 'Belum ada sesi' %></span>
-							</div>
-							<a href="/dashboard/api-doc" class="btn btn-light text-primary fw-semibold">
-								<i class="fa-solid fa-book me-2"></i>API Docs
-							</a>
-							<a href="/dashboard/send-message" class="btn btn-outline-light fw-semibold">
-								<i class="fa-solid fa-paper-plane me-2"></i>Kirim Pesan
-							</a>
-						</div>
-					</div>
-					<div class="col-lg-4 col-12 text-lg-end text-start mt-4 mt-lg-0">
-						<p class="text-uppercase small opacity-75 mb-2">Snapshot</p>
-						<h4 class="mb-1"><%= session ? session.session_number : '—' %></h4>
-						<p class="mb-0 opacity-75">Nomor WhatsApp Tersambung</p>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="col-xl-8 col-12">
-			<div class="card glass-card">
-				<div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center">
-					<div>
-						<h4 class="mb-1">Logs Session</h4>
-						<p class="text-muted mb-0">Pantau QR dan status terkini.</p>
-					</div>
-					<div class="divider">
-						<div id="cancelqr" class="divider-text text-uppercase small">Create Session <i class="fa-solid fa-arrow-right ms-2"></i></div>
-					</div>
-				</div>
-				<div class="card-body" id="socket-qr">
-					<div id="logger">
-						<% if (loggerPath) { %>
-						<script>
-							fetch(`<%= loggerPath %>`)
-								.then((res) => res.text())
-								.then((data) => appendData(data));
-							function appendData(data) {
-								var mainContainer = document.getElementById("logger");
-								var div = document.createElement("div");
-								let c = data.split("\n").filter(line => line.trim() !== "");
-								let logLines = c.map((el, index) => {
-									return `<div class="log-line">${el}</div>`;
-								});
-
-								div.innerHTML = `<div class="log-terminal">${logLines.reverse().join("")}</div>`;
-								mainContainer.innerHTML = "";
-								mainContainer.appendChild(div);
-								// Auto scroll to bottom
-								const terminal = div.querySelector('.log-terminal');
-								if (terminal) {
-									terminal.scrollTop = terminal.scrollHeight;
-								}
-							}
-						</script>
-						<% } else { %>
-						<div class="text-center text-muted py-5" id="qr-placeholder">
-							<i class="fa-solid fa-qrcode fa-2x mb-3"></i>
-							<p class="mb-0">Belum ada sesi. Buat sesi baru untuk memulai.</p>
-						</div>
-						<% } %>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="col-xl-4 col-12">
-			<div class="card glass-card">
-				<div class="card-header border-0">
-					<h4 class="mb-0">Ringkasan Sesi</h4>
-				</div>
-				<div class="card-body p-0">
-					<% if (session) { %>
-					<div class="session-card" id="sessionCreate">
-						<div class="session-info-item">
-							<i class="fa-solid fa-tag"></i>
-							<div>
-								<div class="small">Nama Sesi</div>
-								<div class="fw-bold" id="nameSession"><%= session.session_name %></div>
-							</div>
-						</div>
-						<div class="session-info-item">
-							<i class="fa-solid fa-phone"></i>
-							<div>
-								<div class="small">Nomor WhatsApp</div>
-								<div class="fw-bold" id="numberSession"><%= session.session_number || 'Belum terhubung' %></div>
-							</div>
-						</div>
-						<div class="session-info-item">
-							<i class="fa-solid fa-circle-dot"></i>
-							<div>
-								<div class="small">Status</div>
-								<div id="statusSession">
-									<span class="status-badge-modern <%= session.status === 'CONNECTED' ? 'connected' : 'stopped' %>">
-										<i class="fa-solid fa-<%= session.status === 'CONNECTED' ? 'check-circle' : 'clock' %>"></i>
-										<%= session.status %>
-									</span>
-								</div>
-							</div>
-						</div>
-						<div id="buttonSession" class="mt-3">
-							<% if (session.status == 'CONNECTED') { %>
-							<button class="btn btn-warning w-100 mb-2 fw-semibold" onclick="alertStopSession('<%= session.session_name %>')">
-								<i class="fa-solid fa-circle-stop me-2"></i>Stop Session
-							</button>
-							<% } else { %>
-							<button class="btn btn-primary w-100 mb-2 fw-semibold" onclick="alertStartSession('<%= session.session_name %>')">
-								<i class="fa-solid fa-play me-2"></i>Start Session
-							</button>
-							<% } %>
-						</div>
-						<div id="deleteSession">
-							<a href="/session/delete-session/<%= session.session_name %>" class="btn btn-outline-danger w-100 fw-semibold" onclick="return confirm('Yakin hapus sesi ini?')">
-								<i class="fa-solid fa-trash-can me-2"></i>Delete Session
-							</a>
-						</div>
-					</div>
-					<% } else { %>
-					<div class="text-center text-muted py-5" id="sessionCreate">
-						<i class="fa-solid fa-inbox fa-2x mb-3 opacity-50"></i>
-						<p class="mb-0">Tidak ada sesi aktif</p>
-						<p class="small mt-2">Buat sesi baru untuk memulai</p>
-					</div>
-					<% } %>
-				</div>
-			</div>
-		</div>
-
-		<div class="col-xl-4 col-12">
-			<div class="card glass-card">
-				<div class="card-header border-0">
-					<h4 class="mb-0">Create Session</h4>
-				</div>
-				<div class="card-body">
-					<form action="/session/create-session" method="post" class="needs-validation" novalidate>
-						<div class="form-group mb-3">
-							<label class="form-label">Session Name</label>
-							<input type="text" name="session_name" class="form-control form-control-lg" placeholder="contoh: session_finance" required />
-						</div>
-						<button class="btn btn-primary w-100">
-							<i class="fa-solid fa-qrcode me-2"></i>Create &amp; Scan
-						</button>
-					</form>
-				</div>
-			</div>
-		</div>
-
-		<div class="col-xl-4 col-12">
-			<div class="card glass-card">
-				<div class="card-header border-0 d-flex justify-content-between align-items-center">
-					<h4 class="mb-0">Callback Webhook</h4>
-					<span class="badge bg-light text-dark"><i class="fa-solid fa-plug"></i></span>
-				</div>
-				<div class="card-body">
-					<% if (session) { %>
-					<form id="callbackForm" onsubmit="handleCallbackSubmit(event)">
-						<input type="hidden" name="session_name" value="<%= session.session_name %>" />
-						<div class="form-group mb-3">
-							<label class="form-label">Callback URL</label>
-							<input type="url" class="form-control" name="callback_url" placeholder="https://..." value="<%= callbackSetting ? callbackSetting.callback_url : '' %>" required />
-						</div>
-						<div class="form-group mb-3">
-							<label class="form-label">Callback Token (Optional)</label>
-							<input type="text" class="form-control" name="callback_token" placeholder="x-api-key value" value="<%= callbackSetting ? callbackSetting.callback_token || '' : '' %>" />
-						</div>
-						<button class="btn btn-primary w-100" type="submit">
-							<i class="fa-solid fa-floppy-disk me-2"></i>Save Callback
-						</button>
-						<% if (callbackSetting) { %>
-						<button class="btn btn-outline-danger w-100 mt-2" type="button" onclick="deleteCallback('<%= session.session_name %>')">
-							<i class="fa-solid fa-trash me-2"></i>Remove Callback
-						</button>
-						<% } %>
-						<p class="text-muted mt-3 mb-0 small">
-							Callback per sesi akan menimpa `N8N_WEBHOOK_URL`. Pastikan URL dapat diakses server ini.
-						</p>
-					</form>
-					<% } else { %>
-					<p class="text-center mb-0 text-muted">Buat sesi terlebih dahulu untuk mengatur callback webhook.</p>
-					<% } %>
-				</div>
-			</div>
-		</div>
-
-		<div class="col-xl-4 col-12">
-			<div class="card glass-card">
-				<div class="card-header border-0">
-					<h4 class="mb-0">Quick Links</h4>
-				</div>
-				<div class="card-body quick-links">
-					<a href="/dashboard/send-message" class="btn btn-outline-primary mb-2">
-						<i class="fa-solid fa-comments me-2"></i>Send Message
-					</a>
-					<a href="/dashboard/history-message" class="btn btn-outline-primary mb-2">
-						<i class="fa-solid fa-clock-rotate-left me-2"></i>History
-					</a>
-					<a href="/dashboard/auto-reply" class="btn btn-outline-primary mb-2">
-						<i class="fa-solid fa-robot me-2"></i>Auto Reply
-					</a>
-					<a href="/dashboard/api-doc" class="btn btn-outline-primary">
-						<i class="fa-solid fa-code me-2"></i>API Docs
-					</a>
-				</div>
-			</div>
-		</div>
-	</section>
+	<button class="btn btn-primary btn-minimal shadow-sm" data-bs-toggle="modal" data-bs-target="#createSessionModal">
+		<i class="fa-solid fa-plus"></i> New Session
+	</button>
 </div>
 
-<footer class="mt-5">
-	<div class="divider">
-		<div class="divider-text">
-			<p class="mb-0 small text-muted">WhatsApp Gateway Console &copy; <%= new Date().getFullYear() %></p>
-		</div>
-	</div>
-</footer>
-
-<script>
-	const socket = io();
-
-	socket.on("connection-status", (event) => {
-		$("#cancelqr").html(`Alert Status!`);
-		if (event.result) {
-			$("#socket-qr").html(`<center><p>${event.result}</p></center>`);
-		}
-	});
-
-	socket.on(`update-qr`, (event) => {
-		// $("#cancelqr").html(`<a href="/session/cancelqr?id=${event.session_name}" style="text-align: center" class="btn btn-danger"><i class="fas fa-ban"></i>&nbsp Cancel QR</a>`);
-		$("#socket-qr").html(`<center><img class="img-fluid" src="data:image/png;base64,${event.buffer}" alt="" /></center>`);
-		$("#qr-placeholder").remove();
-	});
-
-	socket.on("qr-loading", (event) => {
-		const text =
-			event.message ||
-			(event.status === "WAITING_MANUAL"
-				? `Menunggu tindakan. Tekan tombol <strong>Generate QR</strong> untuk sesi <strong>${event.session_name}</strong>.`
-				: `Menyiapkan QR untuk <strong>${event.session_name}</strong>...`);
-		$("#socket-qr").html(
-			`<div class="text-center text-muted py-5">
-				<div class="spinner-border text-primary mb-3" role="status"></div>
-				<p class="mb-0">${text}</p>
-			</div>`
-		);
-	});
-
-	socket.on("logger", (event) => {
-		let c = event.result.split("\n").filter(line => line.trim() !== "");
-		let logLines = c.map((el, index) => {
-			return `<div class="log-line">${el}</div>`;
-		});
-		let hasil = logLines.reverse().join("");
-		$("#cancelqr").html(`Create Session &nbsp;&nbsp;<i class="fa-solid fa-arrow-right"></i>`);
-		$("#socket-qr").html(`<div class="log-terminal">${hasil}</div>`);
-		// Auto scroll to bottom
-		setTimeout(() => {
-			const terminal = document.querySelector('.log-terminal');
-			if (terminal) {
-				terminal.scrollTop = terminal.scrollHeight;
-			}
-		}, 100);
-		
-		const statusClass = event.status === 'CONNECTED' ? 'connected' : 'stopped';
-		const statusIcon = event.status === 'CONNECTED' ? 'check-circle' : 'clock';
-		const buttonHtml = event.status === 'CONNECTED' 
-			? `<button class="btn btn-warning w-100 mb-2 fw-semibold" onclick="alertStopSession('${event.session_name}')"><i class="fa-solid fa-circle-stop me-2"></i>Stop Session</button>`
-			: `<button class="btn btn-primary w-100 mb-2 fw-semibold" onclick="alertStartSession('${event.session_name}')"><i class="fa-solid fa-play me-2"></i>Start Session</button>`;
-		
-		$("#sessionCreate").html(
-			`<div class="session-info-item">
-				<i class="fa-solid fa-tag"></i>
-				<div>
-					<div class="small opacity-75">Nama Sesi</div>
-					<div class="fw-bold" id="nameSession">${event.session_name}</div>
-				</div>
-			</div>
-			<div class="session-info-item">
-				<i class="fa-solid fa-phone"></i>
-				<div>
-					<div class="small opacity-75">Nomor WhatsApp</div>
-					<div class="fw-bold" id="numberSession">${event.session_number || 'Belum terhubung'}</div>
-				</div>
-			</div>
-			<div class="session-info-item">
-				<i class="fa-solid fa-circle-dot"></i>
-				<div>
-					<div class="small opacity-75">Status</div>
-					<div id="statusSession">
-						<span class="status-badge-modern ${statusClass}">
-							<i class="fa-solid fa-${statusIcon}"></i>
-							${event.status}
+<!-- Sessions Grid -->
+<div class="row g-4" id="sessionsGrid">
+	<% if (sessions && sessions.length> 0) { %>
+		<% sessions.forEach(session=> { %>
+			<div class="col-12 col-md-6 col-xl-4" id="card-<%= session.session_name %>">
+				<div class="card-simple h-100 d-flex flex-column">
+					<div class="d-flex justify-content-between align-items-start mb-4">
+						<div class="d-flex align-items-center gap-3">
+							<div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary"
+								style="width: 48px; height: 48px;">
+								<i class="fa-brands fa-whatsapp fa-xl"></i>
+							</div>
+							<div>
+								<h5 class="card-title mb-1">
+									<%= session.session_name %>
+								</h5>
+								<p class="text-muted small mb-0 font-monospace">
+									<%= session.session_number || 'Not Connected' %>
+								</p>
+							</div>
+						</div>
+						<span
+							class="status-badge px-2 py-1 rounded <%= session.status === 'CONNECTED' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' %>"
+							id="status-<%= session.session_name %>">
+							<%= session.status %>
 						</span>
 					</div>
+
+					<div class="mt-auto d-flex flex-column gap-2">
+						<div class="row g-2">
+							<div class="col-6">
+								<button class="btn btn-outline btn-minimal w-100"
+									onclick="openLogModal('<%= session.session_name %>')">
+									<i class="fa-solid fa-terminal"></i> Logs
+								</button>
+							</div>
+							<div class="col-6">
+								<button class="btn btn-outline btn-minimal w-100"
+									onclick="openWebhookModal('<%= session.session_name %>')">
+									<i class="fa-solid fa-bolt"></i> Hook
+								</button>
+							</div>
+						</div>
+
+						<div class="d-flex gap-2 mt-2">
+							<% if (session.status==='CONNECTED' ) { %>
+								<button class="btn btn-danger-subtle btn-minimal flex-grow-1"
+									onclick="alertStopSession('<%= session.session_name %>')">
+									<i class="fa-solid fa-stop"></i> Stop
+								</button>
+								<% } else { %>
+									<button class="btn btn-primary btn-minimal flex-grow-1"
+										onclick="alertStartSession('<%= session.session_name %>')">
+										<i class="fa-solid fa-play"></i> Start
+									</button>
+									<% } %>
+										<button class="btn btn-outline btn-minimal text-danger"
+											onclick="alertDeleteSession('<%= session.session_name %>')"
+											title="Delete Session">
+											<i class="fa-solid fa-trash"></i>
+										</button>
+						</div>
+					</div>
 				</div>
 			</div>
-			<div id="buttonSession" class="mt-3">
-				${buttonHtml}
+			<% }); %>
+				<% } else { %>
+					<div class="col-12">
+						<div class="card-simple text-center py-5">
+							<div class="empty-state-icon">
+								<i class="fa-brands fa-whatsapp fa-3x"></i>
+							</div>
+							<h4 class="fw-bold text-dark mb-2">No Active Sessions</h4>
+							<p class="text-muted mb-4" style="max-width: 400px; margin: 0 auto;">You haven't created any
+								WhatsApp sessions yet. Create one to start sending messages and managing auto-replies.
+							</p>
+							<button class="btn btn-primary btn-minimal" data-bs-toggle="modal"
+								data-bs-target="#createSessionModal">
+								<i class="fa-solid fa-plus"></i> Create First Session
+							</button>
+						</div>
+					</div>
+					<% } %>
+</div>
+
+<!-- Create Session Modal -->
+<div class="modal fade" id="createSessionModal" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+			<div class="modal-header border-0 pb-0">
+				<h5 class="modal-title fw-bold">New Session</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 			</div>
-			<div id="deleteSession">
-				<a href="/session/delete-session/${event.session_name}" class="btn btn-outline-danger w-100 fw-semibold" onclick="return confirm('Yakin hapus sesi ini?')">
-					<i class="fa-solid fa-trash-can me-2"></i>Delete Session
-				</a>
-			</div>`
-		);
-	});
+			<div class="modal-body p-4">
+				<form action="/session/create-session" method="post">
+					<div class="mb-4">
+						<label class="form-label">SESSION NAME</label>
+						<input type="text" name="session_name" class="form-control" placeholder="e.g. marketing-bot"
+							required>
+						<div class="form-text mt-2">Use a unique name to identify this connection.</div>
+					</div>
+					<button class="btn btn-primary btn-minimal w-100 justify-content-center">
+						Create & Start Session
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
 
-	socket.on(`session-status`, (event) => {
-		const statusClass = event.status === 'CONNECTED' ? 'connected' : 'stopped';
-		const statusIcon = event.status === 'CONNECTED' ? 'check-circle' : 'clock';
-		$("#statusSession").html(
-			`<span class="status-badge-modern ${statusClass}">
-				<i class="fa-solid fa-${statusIcon}"></i>
-				${event.status}
-			</span>`
-		);
-		if (event.status == "CONNECTED") {
-			$("#buttonSession").html(
-				`<button class="btn btn-warning w-100 mb-2 fw-semibold" onclick="alertStopSession('${event.session_name}')"><i class="fa-solid fa-circle-stop me-2"></i>Stop Session</button>`
-			);
-		} else if (event.status == "STOPPED") {
-			$("#buttonSession").html(
-				`<button class="btn btn-primary w-100 mb-2 fw-semibold" onclick="alertStartSession('${event.session_name}')"><i class="fa-solid fa-play me-2"></i>Start Session</button>`
-			);
-		}
-	});
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" data-bs-backdrop="static">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+			<div class="modal-header border-0">
+				<h5 class="modal-title fw-bold">Scan QR Code</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body text-center pb-5">
+				<div class="mb-3">
+					<span class="badge bg-light text-dark border px-3 py-2 rounded-pill" id="qrSessionName">Session:
+						-</span>
+				</div>
+				<div id="qrContainer"
+					class="d-flex justify-content-center align-items-center bg-light rounded-4 mx-auto"
+					style="width: 280px; height: 280px;">
+					<div class="spinner-border text-primary" role="status"></div>
+				</div>
+				<div class="mt-4">
+					<p class="mb-1 fw-bold text-dark">Open WhatsApp on your phone</p>
+					<p class="text-muted small">Go to Settings > Linked Devices > Link a Device</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
-	async function alertStartSession(session_name) {
-		Swal.fire({
-			title: `Start Session`,
-			html: `Are You Sure Start Session ${session_name}?`,
-			icon: "question",
-			confirmButtonText: `Start Session`,
-			showLoaderOnConfirm: true,
-			preConfirm: () => {
-				return fetch(`/session/start-session?session=${session_name}`)
-					.then((response) => {
-						if (!response.ok) {
-							throw new Error(response.statusText);
-						}
-						return response.json();
-					})
-					.catch((error) => {
-						Swal.showValidationMessage(`Request failed: ${error}!`);
-					});
-			},
-		}).then((result) => {
-			if (result.isConfirmed) {
-				if (result.value.status == 200) {
-					Swal.fire("Success!", JSON.stringify(result.value.message), "success");
-				} else {
-					Swal.fire(`Status ${result.value.status}`, JSON.stringify(result.value.message), "error");
+<!-- Log Modal -->
+<div class="modal fade" id="logModal" tabindex="-1">
+	<div class="modal-dialog modal-lg modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg); overflow: hidden;">
+			<div class="modal-header border-bottom bg-light">
+				<h5 class="modal-title fw-bold">Live Terminal</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body p-0 bg-dark">
+				<div class="p-3"
+					style="height: 450px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;"
+					id="logContainer">
+					<div class="text-secondary">Waiting for logs...</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Webhook Modal -->
+<div class="modal fade" id="webhookModal" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+			<div class="modal-header border-0">
+				<h5 class="modal-title fw-bold">Webhook Configuration</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body p-4">
+				<form id="webhookForm" onsubmit="handleWebhookSubmit(event)">
+					<input type="hidden" id="webhookSessionName" name="session_name">
+					<div class="mb-3">
+						<label class="form-label">CALLBACK URL</label>
+						<input type="url" class="form-control" id="webhookUrl" name="callback_url"
+							placeholder="https://api.example.com/webhook" required>
+					</div>
+					<div class="mb-4">
+						<label class="form-label">SECRET TOKEN</label>
+						<input type="password" class="form-control" id="webhookToken" name="callback_token"
+							placeholder="Optional security token">
+					</div>
+					<div class="d-flex flex-column gap-2">
+						<button type="submit" class="btn btn-primary btn-minimal justify-content-center">Save
+							Configuration</button>
+						<button type="button" class="btn btn-danger-subtle btn-minimal justify-content-center"
+							id="btnDeleteWebhook">Remove Webhook</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<%- include('../layouts/alert') %>
+
+	<script>
+		const socket = io();
+		let currentLogSession = null;
+
+		// Socket Listeners
+		socket.on("connection-status", (event) => {
+			updateCardStatus(event.session_name, event.status);
+			if (event.status === 'CONNECTED' || event.status === 'ready') {
+				const modal = bootstrap.Modal.getInstance(document.getElementById('qrModal'));
+				if (modal) modal.hide();
+			}
+		});
+
+		socket.on(`update-qr`, (event) => {
+			const modalEl = document.getElementById('qrModal');
+			let modal = bootstrap.Modal.getInstance(modalEl);
+			if (!modal) {
+				modal = new bootstrap.Modal(modalEl);
+				modal.show();
+			} else if (!modalEl.classList.contains('show')) {
+				modal.show();
+			}
+
+			document.getElementById('qrSessionName').innerText = `Session: ${event.session_name}`;
+			$("#qrContainer").html(`
+				<div class="bg-white p-2 rounded">
+					<img src="data:image/png;base64,${event.buffer}" alt="QR Code" style="width: 100%; height: 100%;" />
+				</div>
+			`);
+		});
+
+		socket.on("qr-loading", (event) => {
+			const modalEl = document.getElementById('qrModal');
+			let modal = bootstrap.Modal.getInstance(modalEl);
+			if (!modal) {
+				modal = new bootstrap.Modal(modalEl);
+				modal.show();
+			} else if (!modalEl.classList.contains('show')) {
+				modal.show();
+			}
+
+			document.getElementById('qrSessionName').innerText = `Session: ${event.session_name}`;
+			$("#qrContainer").html(`
+				<div class="d-flex flex-column align-items-center">
+					<div class="spinner-border text-primary mb-2" role="status"></div>
+					<span class="text-muted small">Generating QR...</span>
+				</div>
+			`);
+		});
+
+		socket.on("logger", (event) => {
+			if (currentLogSession === event.session_name) {
+				const lines = event.result.split("\n").filter(line => line.trim() !== "");
+				const html = lines.map(line => `<div class="text-light border-bottom border-secondary py-1" style="border-color: #333 !important;">${line}</div>`).reverse().join("");
+				const container = document.getElementById("logContainer");
+				container.innerHTML = html;
+			}
+			if (event.status) {
+				updateCardStatus(event.session_name, event.status);
+				if (event.status === 'CONNECTED') {
+					const modal = bootstrap.Modal.getInstance(document.getElementById('qrModal'));
+					if (modal) modal.hide();
 				}
 			}
 		});
-	}
 
-	async function alertStopSession(session_name) {
-		Swal.fire({
-			title: `Stop Session`,
-			html: `Are You Sure Stop Session ${session_name}?`,
-			icon: "question",
-			confirmButtonText: `Stop Session`,
-			showLoaderOnConfirm: true,
-			preConfirm: () => {
-				return fetch(`/session/stop-session?session=${session_name}`)
-					.then((response) => {
-						if (!response.ok) {
-							throw new Error(response.statusText);
-						}
-						return response.json();
-					})
-					.catch((error) => {
-						Swal.showValidationMessage(`Request failed: ${error}!`);
-					});
-			},
-		}).then((result) => {
-			if (result.isConfirmed) {
-				if (result.value.status == 200) {
-					Swal.fire("Success!", JSON.stringify(result.value.message), "success");
-				} else {
-					Swal.fire(`Status ${result.value.status}`, JSON.stringify(result.value.message), "error");
-				}
+		socket.on("session-status", (event) => {
+			updateCardStatus(event.session_name, event.status);
+			if (event.status === 'CONNECTED') {
+				const modal = bootstrap.Modal.getInstance(document.getElementById('qrModal'));
+				if (modal) modal.hide();
 			}
 		});
-	}
 
-	async function handleCallbackSubmit(event) {
-		event.preventDefault();
-		const form = event.target;
-		const sessionName = form.session_name.value.trim();
-		const callbackUrl = form.callback_url.value.trim();
-		const callbackToken = form.callback_token.value.trim();
+		function updateCardStatus(sessionName, status) {
+			const badge = document.getElementById(`status-${sessionName}`);
+			if (badge) {
+				badge.className = `status-badge px-2 py-1 rounded ${status === 'CONNECTED' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`;
+				badge.innerText = status;
 
-		if (!callbackUrl) {
-			return Swal.fire("Validasi", "Callback URL tidak boleh kosong", "warning");
+				// Reload page if connected to update buttons
+				if (status === 'CONNECTED') {
+					setTimeout(() => window.location.reload(), 1000);
+				}
+			}
 		}
 
-		try {
-			const response = await fetch("/api/callback", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					session_name: sessionName,
-					callback_url: callbackUrl,
-					callback_token: callbackToken || undefined,
-				}),
+		// Auto-open QR if requested
+		document.addEventListener('DOMContentLoaded', () => {
+			const urlParams = new URLSearchParams(window.location.search);
+			const session = urlParams.get('session');
+			const action = urlParams.get('action');
+
+			if (session && action === 'scan') {
+				alertStartSession(session);
+				// Clean URL
+				window.history.replaceState({}, document.title, window.location.pathname);
+			}
+		});
+
+		// Actions
+		function alertStartSession(session_name) {
+			// Show loading toast instead of modal immediately
+			const toast = Swal.mixin({
+				toast: true,
+				position: 'top-end',
+				showConfirmButton: false,
+				timer: 3000,
+				timerProgressBar: true
 			});
-			const result = await response.json();
-			if (result.status === 200) {
-				Swal.fire("Berhasil", "Callback webhook tersimpan", "success").then(() => window.location.reload());
-			} else {
-				Swal.fire(`Status ${result.status}`, JSON.stringify(result.message), "error");
-			}
-		} catch (error) {
-			Swal.fire("Error", error.message, "error");
+			toast.fire({
+				icon: 'info',
+				title: 'Starting session...'
+			});
+
+			fetch(`/session/start-session?session=${session_name}`)
+				.then(res => res.json())
+				.then(data => {
+					if (data.status !== 200) {
+						Swal.fire('Error', data.message, 'error');
+					}
+				});
 		}
-	}
 
-	async function deleteCallback(sessionName) {
-		Swal.fire({
-			title: "Hapus Callback",
-			html: `Hapus callback untuk sesi <strong>${sessionName}</strong>?`,
-			icon: "warning",
-			showCancelButton: true,
-			confirmButtonText: "Hapus",
-		}).then(async (result) => {
-			if (!result.isConfirmed) return;
-			try {
-				const response = await fetch(`/api/callback/${sessionName}`, { method: "DELETE" });
-				const value = await response.json();
-				if (value.status === 200) {
-					Swal.fire("Berhasil", "Callback dihapus", "success").then(() => window.location.reload());
-				} else {
-					Swal.fire(`Status ${value.status}`, JSON.stringify(value.message), "error");
+		function alertStopSession(session_name) {
+			Swal.fire({
+				title: 'Stop Session?',
+				text: "This will disconnect the WhatsApp client.",
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonText: 'Stop Session',
+				confirmButtonColor: '#ef4444',
+				cancelButtonColor: '#64748b'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					fetch(`/session/stop-session?session=${session_name}`)
+						.then(res => res.json())
+						.then(data => {
+							if (data.status === 200) {
+								Swal.fire('Stopped', 'Session stopped.', 'success').then(() => window.location.reload());
+							} else {
+								Swal.fire('Error', data.message, 'error');
+							}
+						});
 				}
-			} catch (error) {
-				Swal.fire("Error", error.message, "error");
-			}
-		});
-	}
+			});
+		}
 
-</script>
+		function alertDeleteSession(session_name) {
+			Swal.fire({
+				title: 'Delete Session?',
+				text: "This action cannot be undone.",
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonText: 'Delete Permanently',
+				confirmButtonColor: '#ef4444',
+				cancelButtonColor: '#64748b'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					window.location.href = `/session/delete-session/${session_name}`;
+				}
+			});
+		}
+
+		function openLogModal(session_name) {
+			currentLogSession = session_name;
+			new bootstrap.Modal(document.getElementById('logModal')).show();
+			document.getElementById("logContainer").innerHTML = '<div class="text-secondary p-3">Waiting for live logs...<br><small>Interact with the session to see updates.</small></div>';
+		}
+
+		async function openWebhookModal(session_name) {
+			document.getElementById('webhookSessionName').value = session_name;
+			document.getElementById('webhookUrl').value = '';
+			document.getElementById('webhookToken').value = '';
+
+			try {
+				const res = await fetch(`/api/callback?session_name=${session_name}`);
+				const data = await res.json();
+				if (data.status === 200 && data.data) {
+					document.getElementById('webhookUrl').value = data.data.callback_url;
+					document.getElementById('webhookToken').value = data.data.callback_token || '';
+					document.getElementById('btnDeleteWebhook').onclick = () => deleteCallback(session_name);
+					document.getElementById('btnDeleteWebhook').style.display = 'block';
+				} else {
+					document.getElementById('btnDeleteWebhook').style.display = 'none';
+				}
+			} catch (e) {
+				console.error(e);
+			}
+
+			new bootstrap.Modal(document.getElementById('webhookModal')).show();
+		}
+
+		async function handleWebhookSubmit(event) {
+			event.preventDefault();
+			const form = event.target;
+			const data = {
+				session_name: form.session_name.value,
+				callback_url: form.callback_url.value,
+				callback_token: form.callback_token.value
+			};
+
+			fetch("/api/callback", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(data)
+			})
+				.then(res => res.json())
+				.then(result => {
+					if (result.status === 200) {
+						Swal.fire("Saved", "Webhook configuration updated.", "success");
+						bootstrap.Modal.getInstance(document.getElementById('webhookModal')).hide();
+					} else {
+						Swal.fire("Error", result.message, "error");
+					}
+				});
+		}
+
+		async function deleteCallback(sessionName) {
+			if (confirm('Remove webhook configuration?')) {
+				fetch(`/api/callback/${sessionName}`, { method: "DELETE" })
+					.then(res => res.json())
+					.then(data => {
+						if (data.status === 200) {
+							Swal.fire("Removed", "Webhook removed.", "success");
+							bootstrap.Modal.getInstance(document.getElementById('webhookModal')).hide();
+						}
+					});
+			}
+		}
+	</script>

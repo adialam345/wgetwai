@@ -36,7 +36,7 @@ class ControllerApi extends ConnectionSession {
 	async clientValidator(req, res, sessions, target) {
 		try {
 			const toTarget = helpers.phoneNumber(target);
-			const client = this.getClient();
+			const client = this.getClient(sessions);
 			if (!client) {
 				res.send({ status: 403, message: `Session ${sessions} not Found` });
 				return { toTarget: null, client: null };
@@ -340,9 +340,9 @@ class ControllerApi extends ConnectionSession {
 			const buttons =
 				Array.isArray(buttonFilter) && buttonFilter.length
 					? buttonFilter.map((value, index) => {
-							let result = { index: 3 + index, quickReplyButton: { displayText: value, id: `${value}${randomId}` } };
-							return result;
-					  })
+						let result = { index: 3 + index, quickReplyButton: { displayText: value, id: `${value}${randomId}` } };
+						return result;
+					})
 					: [{ index: 3, quickReplyButton: { displayText: buttonFilter, id: `${buttonFilter}${randomId}` } }];
 			if (urlButton) {
 				if (!/^(http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm.test(responUrl)) {
@@ -357,8 +357,8 @@ class ControllerApi extends ConnectionSession {
 			const buttDb =
 				Array.isArray(buttonFilter) && buttonFilter.length
 					? buttonFilter.map((value, index) => {
-							return `${value}${randomId}`;
-					  })
+						return `${value}${randomId}`;
+					})
 					: [`${buttonFilter}${randomId}`];
 			btnMessage = Array.isArray(btnMessage) && btnMessage.length ? btnMessage : [btnMessage];
 			await new ButtonResponse().createButtonResponse(sessions, toTarget, randomId, buttDb, btnMessage);

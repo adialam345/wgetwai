@@ -11,17 +11,12 @@ class ControllerUser extends ConnectionSession {
 		try {
 			let { session_name } = req.body;
 			if (session_name) {
-				if (fs.readdirSync(this.sessionPath).length < 2) {
-					if (!fs.existsSync(`${this.sessionPath}/${session_name}`)) {
-						this.createSession(session_name);
-						req.flash("side", "Success Create Session, Scan QR Now!");
-						return res.redirect(endpoint);
-					} else {
-						req.flash("error_msg", `Can't Create a Session With the Name ${session_name}, Because that Name Already Exists`);
-						return res.redirect(endpoint);
-					}
+				if (!fs.existsSync(`${this.sessionPath}/${session_name}`)) {
+					this.createSession(session_name);
+					req.flash("side", "Success Create Session, Scan QR Now!");
+					return res.redirect(`${endpoint}?session=${session_name}&action=scan`);
 				} else {
-					req.flash("error_msg", `Can't create more than one session`);
+					req.flash("error_msg", `Can't Create a Session With the Name ${session_name}, Because that Name Already Exists`);
 					return res.redirect(endpoint);
 				}
 			}
@@ -36,8 +31,8 @@ class ControllerUser extends ConnectionSession {
 		try {
 			let { session } = req.query;
 			if (session) {
-				const client = this.getClient();
-				if ((Object.keys(client).length === 0 && client.constructor === Object) || client.isStop == true) {
+				const client = this.getClient(session);
+				if (!client || (Object.keys(client).length === 0 && client.constructor === Object) || client.isStop == true) {
 					if (fs.existsSync(`${this.sessionPath}/${session}`)) {
 						await this.createSession(session);
 						return res.send({ status: 200, message: `Success Start Session ${session}` });
@@ -60,7 +55,7 @@ class ControllerUser extends ConnectionSession {
 		try {
 			let { session } = req.query;
 			if (session) {
-				const client = this.getClient();
+				const client = this.getClient(session);
 				if (client && client.isStop == false) {
 					if (fs.existsSync(`${this.sessionPath}/${session}`)) {
 						client.isStop = true;

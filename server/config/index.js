@@ -4,7 +4,7 @@ import moment from "moment-timezone";
 import { Server } from "socket.io";
 import { modules } from "../../lib/index.js";
 import SessionDatabase from "../database/db/session.db.js";
-import ConnectionSession from "../session/Session.js";
+
 import App from "./App.js";
 import { connectDatabase } from "./Database.js";
 
