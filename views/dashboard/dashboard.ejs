@@ -293,7 +293,6 @@
 			const action = urlParams.get('action');
 
 			if (session && action === 'scan') {
-				alertStartSession(session);
 				// Clean URL
 				window.history.replaceState({}, document.title, window.location.pathname);
 			}

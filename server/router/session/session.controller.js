@@ -40,7 +40,7 @@ class ControllerUser extends ConnectionSession {
 						return res.send({ status: 404, message: `Session ${session} Folder Not Found!` });
 					}
 				} else {
-					return res.send({ status: 403, message: `Session is already active before!` });
+					return res.send({ status: 200, message: `Session ${session} is already active!` });
 				}
 			} else {
 				res.send({ status: 400, message: "Input Data!" });
